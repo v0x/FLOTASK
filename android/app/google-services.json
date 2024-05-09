@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "943015390004",
+    "project_id": "flotask-10d57",
+    "storage_bucket": "flotask-10d57.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943015390004:android:4a267c79c715f904631361",
+        "android_client_info": {
+          "package_name": "com.example.flotask"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPtKsAB6zuN70CHBVZicfa1x6kEoB_1n0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
