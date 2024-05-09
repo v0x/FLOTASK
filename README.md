@@ -4,6 +4,8 @@ A new Flutter project. Test
 
 ## To run:
 
+PREREQS: use ANDROID 14 API 34 and use PIXEL 8 API 34 as android emulator
+
 1. cd project directory
 2. flutter pub get
 3. firebase login {use google email}
