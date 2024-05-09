@@ -29,6 +29,13 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
+  List<String> items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDataFromFirestore();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +59,32 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: _sendDataToFirestore,
               child: Text('Submit'),
             ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(items[index]),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void fetchDataFromFirestore() {
+    FirebaseFirestore.instance
+        .collection('data')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((data) {
+      items.clear();
+      data.docs.forEach((doc) => items.add(doc['text']));
+      setState(() {});
+    });
   }
 
   void _sendDataToFirestore() {
