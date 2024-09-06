@@ -33,6 +33,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
   List<String> items = [];
+  int currentPageIndex = 0;
 
   @override
   void initState() {
@@ -46,36 +47,102 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: Text('Submit Data to Firestore test again'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  labelText: 'Test data',
+        body: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    labelText: 'Test data',
+                  ),
                 ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _sendDataToFirestore,
-                child: Text('Submit'),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(items[index]),
-                    );
-                  },
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _sendDataToFirestore,
+                  child: Text('Submit'),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(items[index]),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: const CustomBottomNavigationBar());
+          Card(
+            shadowColor: Colors.transparent,
+            margin: const EdgeInsets.all(8.0),
+            child: SizedBox.expand(
+              child: Center(
+                child: Text(
+                  'Task Page',
+                ),
+              ),
+            ),
+          ),
+          // CalenderPage(),
+          Card(
+            shadowColor: Colors.transparent,
+            margin: const EdgeInsets.all(8.0),
+            child: SizedBox.expand(
+              child: Center(
+                child: Text(
+                  'Pomodoro Page',
+                ),
+              ),
+            ),
+          ),
+          Card(
+            shadowColor: Colors.transparent,
+            margin: const EdgeInsets.all(8.0),
+            child: SizedBox.expand(
+              child: Center(
+                child: Text(
+                  'Progress Page',
+                ),
+              ),
+            ),
+          ),
+        ][currentPageIndex],
+        bottomNavigationBar: NavigationBar(
+          onDestinationSelected: (int index) {
+            setState(() {
+              currentPageIndex = index;
+            });
+          },
+          selectedIndex: currentPageIndex,
+          indicatorColor: const Color.fromARGB(255, 7, 197, 255),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.task),
+              label: 'Tasks',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_sharp),
+              label: 'Calendar',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.timer_outlined),
+              label: 'Pomodoro',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.checklist_rtl_rounded),
+              label: 'Progress',
+            ),
+          ],
+        ));
   }
 
   void fetchDataFromFirestore() {
@@ -104,52 +171,5 @@ class _MyHomePageState extends State<MyHomePage> {
 
       _controller.clear();
     }
-  }
-}
-
-class CustomBottomNavigationBar extends StatefulWidget {
-  const CustomBottomNavigationBar({super.key});
-
-  @override
-  State<CustomBottomNavigationBar> createState() =>
-      _CustomBottomNavigationBarState();
-}
-
-class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
-  int currentPageIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      onDestinationSelected: (int index) {
-        setState(() {
-          currentPageIndex = index;
-        });
-      },
-      indicatorColor: const Color.fromARGB(255, 7, 197, 255),
-      selectedIndex: currentPageIndex,
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.task),
-          label: 'Tasks',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.calendar_month_sharp),
-          label: 'Calendar',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.timer_outlined),
-          label: 'Pomodoro',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.checklist_rtl_rounded),
-          label: 'Progress',
-        ),
-      ],
-    );
   }
 }
