@@ -18,11 +18,11 @@ PREREQS: use ANDROID 14 API 34 and use PIXEL 8 API 34 as android emulator
 
 
 ## Project Management
-Each person works on their own branch. For each future, 
+Each person works on their own branch. Create a new branch with the feature you are working on.
 
-Create a new 
+Use the screens directory to update the screen you are working on
 
-
+Can also add a components directory if the Widget is reusable
 
 ## Flutter notes
 
