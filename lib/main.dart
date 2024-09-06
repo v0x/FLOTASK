@@ -1,10 +1,15 @@
-import 'package:flotask/pages/home.dart';
+// FLUTTER CORE PACKAGES
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
+// SCREENS
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/home.dart';
+import 'package:flotask/pages/pomodoro.dart';
+import 'package:flotask/pages/task.dart';
+import 'package:flotask/pages/progress.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,40 +82,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-          Card(
-            shadowColor: Colors.transparent,
-            margin: const EdgeInsets.all(8.0),
-            child: SizedBox.expand(
-              child: Center(
-                child: Text(
-                  'Task Page',
-                ),
-              ),
-            ),
-          ),
-          // CalenderPage(),
-          Card(
-            shadowColor: Colors.transparent,
-            margin: const EdgeInsets.all(8.0),
-            child: SizedBox.expand(
-              child: Center(
-                child: Text(
-                  'Pomodoro Page',
-                ),
-              ),
-            ),
-          ),
-          Card(
-            shadowColor: Colors.transparent,
-            margin: const EdgeInsets.all(8.0),
-            child: SizedBox.expand(
-              child: Center(
-                child: Text(
-                  'Progress Page',
-                ),
-              ),
-            ),
-          ),
+          TaskPage(),
+          CalendarPage(),
+          PomodoroPage(),
+          ProgressPage(),
         ][currentPageIndex],
         bottomNavigationBar: NavigationBar(
           onDestinationSelected: (int index) {
