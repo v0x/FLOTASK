@@ -11,6 +11,27 @@ import 'package:flotask/pages/pomodoro.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 
+import 'package:flotask/components/notes.dart';
+
+class NotesTestApp extends StatelessWidget {
+  final TextEditingController notesController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Notes Test'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: NotesWidget(
+          controller: TextEditingController(), // Ensure this is initialized
+        ),
+      ),
+    );
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -25,7 +46,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MyHomePage(),
+      home: NotesTestApp(),
     );
   }
 }
