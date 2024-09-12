@@ -10,6 +10,7 @@ import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/pomodoro.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
+import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
           CalendarPage(),
           PomodoroPage(),
           ProgressPage(),
+          UserProfilePage(), // Add UserProfilePage as a screen
         ][currentPageIndex],
         bottomNavigationBar: NavigationBar(
           onDestinationSelected: (int index) {
@@ -115,6 +117,10 @@ class _MyHomePageState extends State<MyHomePage> {
             NavigationDestination(
               icon: Icon(Icons.checklist_rtl_rounded),
               label: 'Progress',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person),
+              label: 'Profile', // Add profile icon
             ),
           ],
         ));
