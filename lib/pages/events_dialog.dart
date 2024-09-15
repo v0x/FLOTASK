@@ -6,13 +6,12 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 class EventDialog extends StatefulWidget {
-  const EventDialog({super.key});
+  final EventController eventController;
+  const EventDialog({required this.eventController, super.key});
 
   @override
   State<EventDialog> createState() => _EventDialogState();
 }
-
-// TODO: figure out how to add events either through floating action button or onTap of event
 
 class _EventDialogState extends State<EventDialog> {
   EventController _controller = EventController();
@@ -129,7 +128,7 @@ class _EventDialogState extends State<EventDialog> {
                         _endTime.minute,
                       ));
 
-                  CalendarControllerProvider.of(context).controller.add(event);
+                  widget.eventController.add(event);
                   Navigator.of(context).pop();
                 },
                 child: Text("Submit"))
