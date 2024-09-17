@@ -19,3 +19,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^0.8.7+3  
