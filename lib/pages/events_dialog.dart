@@ -1,5 +1,5 @@
 import 'package:calendar_view/calendar_view.dart';
-import 'package:flotask/models/textfield.dart';
+import 'package:flotask/components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -14,7 +14,6 @@ class EventDialog extends StatefulWidget {
 }
 
 class _EventDialogState extends State<EventDialog> {
-  EventController _controller = EventController();
   TextEditingController _eventController = TextEditingController();
   TextEditingController _titleController = TextEditingController();
   TextEditingController _startDateController = TextEditingController();
@@ -28,6 +27,7 @@ class _EventDialogState extends State<EventDialog> {
 
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -114,19 +114,20 @@ class _EventDialogState extends State<EventDialog> {
             TextButton(
                 onPressed: () {
                   final event = CalendarEventData(
-                      title: _titleController.text,
-                      date: _startDate,
-                      endDate: _endDate,
-                      description: _descController.text,
-                      startTime: DateTime(_startDate.year, _startDate.month,
-                          _startDate.day, _startTime.hour, _startTime.minute),
-                      endTime: DateTime(
-                        _endDate.year,
-                        _endDate.month,
-                        _endDate.day,
-                        _endTime.hour,
-                        _endTime.minute,
-                      ));
+                    title: _titleController.text,
+                    date: _startDate,
+                    endDate: _endDate,
+                    description: _descController.text,
+                    startTime: DateTime(_startDate.year, _startDate.month,
+                        _startDate.day, _startTime.hour, _startTime.minute),
+                    endTime: DateTime(
+                      _endDate.year,
+                      _endDate.month,
+                      _endDate.day,
+                      _endTime.hour,
+                      _endTime.minute,
+                    ),
+                  );
 
                   widget.eventController.add(event);
                   Navigator.of(context).pop();

@@ -26,7 +26,6 @@ class _CalendarPageState extends State<CalendarPage>
 
   @override
   Widget build(BuildContext context) {
-    final eventController = CalendarControllerProvider.of(context).controller;
     return Scaffold(
         appBar: AppBar(
           title: Text("Calendar View"),
@@ -36,7 +35,13 @@ class _CalendarPageState extends State<CalendarPage>
           ),
         ),
         body: TabBarView(controller: tabController, children: [
-          MonthView(controller: _eventController), // Pass the EventController
+          MonthView(
+            controller: _eventController,
+            onCellTap: (events, date) {
+              // Implement callback when user taps on a cell.
+              print(events);
+            },
+          ),
           WeekView(controller: _eventController),
           DayView(controller: _eventController),
         ]),
