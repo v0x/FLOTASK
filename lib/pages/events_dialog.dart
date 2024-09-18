@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 
 class EventDialog extends StatefulWidget {
   final EventController eventController;
-  const EventDialog({required this.eventController, super.key});
+  final DateTime? longPressDate;
+  const EventDialog(
+      {required this.eventController, this.longPressDate, super.key});
 
   @override
   State<EventDialog> createState() => _EventDialogState();
@@ -27,6 +29,17 @@ class _EventDialogState extends State<EventDialog> {
 
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    // Set the initial start date if provided
+    if (widget.longPressDate != null) {
+      _startDate = widget.longPressDate!;
+      _startDateController.text =
+          DateFormat.yMMMd().format(widget.longPressDate!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
