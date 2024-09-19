@@ -9,8 +9,10 @@ environment:
 dependencies:
   cloud_firestore: ^4.17.3
   firebase_core: ^2.31.0
+  image_picker: ^0.8.7+3
   flutter:
     sdk: flutter
+
 
 dev_dependencies:
   flutter_test:
@@ -19,9 +21,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-
-esraa_dependencies:
-  flutter:
-    sdk: flutter
-  image_picker: ^0.8.7+3  

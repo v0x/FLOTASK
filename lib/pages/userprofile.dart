@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class UserProfilePage extends StatefulWidget {
   @override
@@ -14,6 +15,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
   FocusNode _emailFocusNode = FocusNode();
   FocusNode _passwordFocusNode = FocusNode();
 
+  final ImagePicker _picker = ImagePicker(); // Initialize ImagePicker
+
+  Future<void> _changeProfilePicture() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        // Update the profile picture here
+        // For now, we'll just print the file path
+        print("Profile picture selected: ${image.path}");
+      });
+    }
+  }
+
   void _saveUsername() {
     // Save logic here
     print("Username saved: ${usernameController.text}");
@@ -27,11 +41,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   void _savePassword() {
     // Save logic here
     print("Password saved: ${passwordController.text}");
-  }
-
-  void _changeProfilePicture() {
-    // Change profile picture logic
-    print("Change profile picture");
   }
 
   @override
@@ -67,7 +76,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: _changeProfilePicture,
+                        onTap: _changeProfilePicture, // Call method to change profile picture
                         child: CircleAvatar(
                           backgroundColor: Colors.grey[300],
                           radius: 18,
