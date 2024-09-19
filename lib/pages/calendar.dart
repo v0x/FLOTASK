@@ -1,8 +1,10 @@
 import 'package:flotask/components/event_note.dart';
-import 'package:flotask/pages/events_dialog.dart';
+import 'package:flotask/components/events_dialog.dart';
+import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/main.dart';
+import 'package:provider/provider.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -29,6 +31,8 @@ class _CalendarPageState extends State<CalendarPage>
 
   @override
   Widget build(BuildContext context) {
+    final eventProvider = context.watch<EventProvider>();
+
     return Scaffold(
         appBar: AppBar(
           title: Text("Calendar View"),
@@ -107,8 +111,68 @@ class _CalendarPageState extends State<CalendarPage>
               );
             },
           ),
-          WeekView(controller: _eventController),
-          DayView(controller: _eventController),
+          WeekView(
+            controller: _eventController,
+            onEventTap: (event, date) {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(
+                        title: Text("$event Details"),
+                        leading: IconButton(
+                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pop(
+                                context); // Pops the current page and goes back
+                          },
+                        ),
+                      ),
+                      body: EventDetailWithNotes(),
+                    ),
+                  ));
+            },
+            onDateLongPress: (date) {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) => EventDialog(
+                  eventController: _eventController,
+                  longPressDate: date,
+                ),
+              );
+            },
+          ),
+          DayView(
+            controller: _eventController,
+            onEventTap: (event, date) {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(
+                        title: Text("$event Details"),
+                        leading: IconButton(
+                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pop(
+                                context); // Pops the current page and goes back
+                          },
+                        ),
+                      ),
+                      body: EventDetailWithNotes(),
+                    ),
+                  ));
+            },
+            onDateLongPress: (date) {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) => EventDialog(
+                  eventController: _eventController,
+                  longPressDate: date,
+                ),
+              );
+            },
+          ),
         ]),
 
         // action button to show a dialog to input a calendar event
@@ -136,43 +200,9 @@ class _CalendarPageState extends State<CalendarPage>
                 ),
               ),
             ),
-            ..._eventController
-                .getEventsOnDay(DateTime.now())
-                .map((event) => ListTile(
-                      title: Text(event.title),
-                      subtitle: Text('${event.date} - ${event.endDate}'),
-                    )),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text("hello"),
-            ),
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: const Text('Messages'),
-              onTap: () {
-                setState(() {
-                  selectedPage = 'Messages';
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_circle),
-              title: const Text('Profile'),
-              onTap: () {
-                setState(() {
-                  selectedPage = 'Profile';
-                });
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                setState(() {
-                  selectedPage = 'Settings';
-                });
-              },
-            ),
+            ...eventProvider.events.map((e) => ListTile(
+                  title: Text(e.note.toString()),
+                ))
           ]),
         ));
   }

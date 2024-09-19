@@ -1,37 +1,18 @@
 // FLUTTER CORE PACKAGES
+import 'package:flotask/models/event_model.dart';
+import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 
 // SCREENS
 import 'package:flotask/pages/calendar.dart';
-import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/pomodoro.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
-
-import 'package:flotask/components/notes.dart';
-
-class NotesTestApp extends StatelessWidget {
-  final TextEditingController notesController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Notes Test'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: NotesWidget(
-          controller: TextEditingController(), // Ensure this is initialized
-        ),
-      ),
-    );
-  }
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,10 +27,11 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CalendarControllerProvider(
-      controller: EventController(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => EventProvider()),
+      ],
       child: MaterialApp(
-        // Your initialization for material app.
         home: MyHomePage(),
       ),
     );

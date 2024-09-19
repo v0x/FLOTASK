@@ -15,6 +15,7 @@ dependencies:
   intl: ^0.19.0
   markdown_editor_plus: ^0.2.15
   provider: ^6.1.2
+  uuid: ^4.5.0
 
 dev_dependencies:
   flutter_test:

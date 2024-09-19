@@ -1,15 +1,22 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/components/textfield.dart';
+import 'package:flotask/models/event_model.dart';
+import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class EventDialog extends StatefulWidget {
   final EventController eventController;
   final DateTime? longPressDate;
+  final DateTime? longPressEndDate;
   const EventDialog(
-      {required this.eventController, this.longPressDate, super.key});
+      {required this.eventController,
+      this.longPressDate,
+      this.longPressEndDate,
+      super.key});
 
   @override
   State<EventDialog> createState() => _EventDialogState();
@@ -33,6 +40,7 @@ class _EventDialogState extends State<EventDialog> {
   @override
   void initState() {
     super.initState();
+
     // Set the initial start date if provided
     if (widget.longPressDate != null) {
       _startDate = widget.longPressDate!;
@@ -43,6 +51,8 @@ class _EventDialogState extends State<EventDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final eventProvider = context.read<EventProvider>();
+
     return AlertDialog(
       title: Text('Add Event'),
       scrollable: true,
@@ -143,6 +153,10 @@ class _EventDialogState extends State<EventDialog> {
                   );
 
                   widget.eventController.add(event);
+
+                  eventProvider
+                      .addEvent(event, note: "Some notes", tags: ["work"]);
+                  print(eventProvider);
                   Navigator.of(context).pop();
                 },
                 child: Text("Submit"))
