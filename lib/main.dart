@@ -25,6 +25,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,  // Disable the debug banner
       home: RootLayout(),
     );
   }
@@ -42,10 +43,10 @@ class _RootLayoutState extends State<RootLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Submit Data to Firestore test again'),
+          title: Text(''),
         ),
         body: [
-          HomePage(pageIndex: currentPageIndex),
+          HomePage(),
           TaskPage(),
           CalendarPage(),
           PomodoroPage(),

@@ -1,83 +1,115 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flotask/components/menu.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
-class HomePage extends StatefulWidget {
-  final pageIndex;
-  const HomePage({this.pageIndex, super.key});
-
+class MyHome extends StatelessWidget {
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: HomePage(),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _controller = TextEditingController();
-  List<String> items = [];
-  int currentPageIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchDataFromFirestore();
-  }
+class HomePage extends StatelessWidget {
+  HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: _controller,
+    // Get the current date
+    final String formattedDate = DateFormat('MMMM d, yyyy').format(DateTime.now());
+
+    void _showAddTaskDialog() {
+      final TextEditingController _taskController = TextEditingController();
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Add New Task'),
+            content: TextField(
+              controller: _taskController,
               decoration: InputDecoration(
-                labelText: 'Test data',
+                hintText: 'Enter task description',
+                filled: true,
+                fillColor: Colors.grey[200], // Light grey background for the text box
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
               ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _sendDataToFirestore,
-              child: Text('Submit'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, pageIndex) {
-                  return ListTile(
-                    title: Text(items[pageIndex]),
-                  );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  final task = _taskController.text;
+                  if (task.isNotEmpty) {
+                    // You can add logic to handle the task here
+                    print('Task added: $task');
+                    Navigator.pop(context); // Close the dialog
+                  }
                 },
+                child: Text(
+                  'Add',
+                  style: TextStyle(color: Colors.blue), // Set text color to blue
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.blue), // Set text color to blue
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return Scaffold(
+      drawer: Menu(),
+      appBar: AppBar(
+        title: Text(
+          'Welcome Back, John!',
+          style: TextStyle(color: Colors.blue), // Set title text color to blue
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () {
+              // Add your notification logic here
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 20),
+            Text(
+              formattedDate,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
               ),
             ),
           ],
-        ));
-  }
-
-  void fetchDataFromFirestore() {
-    FirebaseFirestore.instance
-        .collection('data')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .listen((data) {
-      items.clear();
-      data.docs.forEach((doc) => items.add(doc['text']));
-      setState(() {});
-    });
-  }
-
-  void _sendDataToFirestore() {
-    String inputText = _controller.text;
-    if (inputText.isNotEmpty) {
-      FirebaseFirestore.instance
-          .collection('data')
-          .add({
-            'text': inputText,
-            'timestamp': FieldValue.serverTimestamp(),
-          })
-          .then((value) => print("Data Added"))
-          .catchError((error) => print("Failed to add data: $error"));
-
-      _controller.clear();
-    }
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTaskDialog,
+        child: Icon(Icons.add),
+        backgroundColor: Colors.blue,
+        tooltip: 'Add Task',
+      ),
+    );
   }
 }
