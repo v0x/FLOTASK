@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// custom widget for the event dialog widget
 class TextInput extends StatelessWidget {
   final TextEditingController controller;
   final String label;

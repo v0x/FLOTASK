@@ -33,6 +33,9 @@ class MainApp extends StatelessWidget {
       ],
       child: MaterialApp(
         home: MyHomePage(),
+        theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+                seedColor: Color.fromARGB(255, 235, 216, 182))),
       ),
     );
   }

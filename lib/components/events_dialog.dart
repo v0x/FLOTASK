@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+// Widget to show a dialog, where the user can input event, title, start time, end time, description, start date, and end date
 class EventDialog extends StatefulWidget {
   final EventController eventController;
   final DateTime? longPressDate;
@@ -135,6 +136,8 @@ class _EventDialogState extends State<EventDialog> {
               ),
             ),
             TextButton(
+
+                // main functionality to add an event to global EventModel class
                 onPressed: () {
                   final event = CalendarEventData(
                     title: _titleController.text,
@@ -166,6 +169,7 @@ class _EventDialogState extends State<EventDialog> {
     );
   }
 
+// function to show the TIME PICKER
   Future _selectTime(BuildContext context, bool time) async {
     final setTime = time ? _startTime : _endTime;
     final TimeOfDay? pickedTime =
@@ -184,6 +188,7 @@ class _EventDialogState extends State<EventDialog> {
     }
   }
 
+// function to show the DATE PICKER
   Future _selectDate(BuildContext context, bool date) async {
     final setDate = date ? _startDate : _endDate;
     final DateTime? pickedDate = await showDatePicker(

@@ -1,7 +1,7 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:uuid/uuid.dart';
 
-// Model class for a user-created event
+// Model class for a user-created event; used globally for every feature
 class EventModel {
   final String id;
   CalendarEventData event;
@@ -18,5 +18,5 @@ class EventModel {
     this.category = "Home",
     this.isCompleted = false,
     this.streak = 0,
-  }) : id = Uuid().v4(); // Unique ID for each event
+  }) : id = Uuid().v4();
 }

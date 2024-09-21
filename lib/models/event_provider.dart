@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'event_model.dart';
 
+// the global state for handling all events within our app
 class EventProvider extends ChangeNotifier {
   // List of events
   List<EventModel> _events = [];
@@ -20,7 +21,7 @@ class EventProvider extends ChangeNotifier {
     );
 
     _events.add(newEvent);
-    notifyListeners(); // Notify the UI that the event list has changed
+    notifyListeners();
   }
 
   // Method to remove an event
@@ -36,5 +37,13 @@ class EventProvider extends ChangeNotifier {
       _events[index].event = updatedEventData;
       notifyListeners();
     }
+  }
+
+  // method to update note
+  void updateNote(String eventId, String note) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    _events[index].note = note;
+    notifyListeners();
   }
 }
