@@ -1,11 +1,16 @@
 // FLUTTER CORE PACKAGES
+import 'package:flotask/models/event_model.dart';
+import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 
 // SCREENS
+
+import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
@@ -24,11 +29,16 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CalendarControllerProvider(
-      controller: EventController(),
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => EventProvider()),
+      ],
       child: MaterialApp(
-        // Your initialization for material app.
         home: RootLayout(),
+        theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+                seedColor: Color.fromARGB(255, 235, 216, 182))),
       ),
     );
   }
