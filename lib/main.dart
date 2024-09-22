@@ -6,8 +6,7 @@ import 'firebase_options.dart';
 
 // SCREENS
 import 'package:flotask/pages/calendar.dart';
-import 'package:flotask/pages/home.dart';
-import 'package:flotask/pages/pomodoro.dart';
+import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 
