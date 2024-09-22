@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'package:calendar_view/calendar_view.dart';
 
 // SCREENS
 import 'package:flotask/pages/calendar.dart';
@@ -23,8 +24,12 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: RootLayout(),
+    return CalendarControllerProvider(
+      controller: EventController(),
+      child: MaterialApp(
+        // Your initialization for material app.
+        home: RootLayout(),
+      ),
     );
   }
 }
