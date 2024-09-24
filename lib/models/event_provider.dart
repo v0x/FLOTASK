@@ -88,4 +88,14 @@ class EventProvider extends ChangeNotifier {
         : DateTime(date.year + 1, 1, 1);
     return beginningNextMonth.subtract(Duration(days: 1)).day;
   }
+
+  // method to archive note
+  void archiveNote(String eventId) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (_events[index].isArchived == false) {
+      _events[index].isArchived = true;
+    }
+    notifyListeners();
+  }
 }

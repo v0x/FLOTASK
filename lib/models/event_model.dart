@@ -24,17 +24,21 @@ class EventModel {
   // to keep track of when the user completes a task
   DateTime? lastCompletedDate;
 
-  EventModel({
-    required this.event,
-    this.note,
-    this.tags,
-    this.category = "Home",
-    this.isCompleted = false,
-    this.dayStreak = 0,
-    this.monthStreak = 0,
-    this.yearStreak = 0,
-    this.isRecurring = false,
-    this.isReminder = true,
-    this.lastCompletedDate,
-  }) : id = Uuid().v4();
+// for archive list functionality
+  bool isArchived;
+
+  EventModel(
+      {required this.event,
+      this.note,
+      this.tags,
+      this.category = "Home",
+      this.isCompleted = false,
+      this.dayStreak = 0,
+      this.monthStreak = 0,
+      this.yearStreak = 0,
+      this.isRecurring = false,
+      this.isReminder = true,
+      this.lastCompletedDate,
+      this.isArchived = false})
+      : id = Uuid().v4();
 }
