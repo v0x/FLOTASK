@@ -46,4 +46,14 @@ class EventProvider extends ChangeNotifier {
     _events[index].note = note;
     notifyListeners();
   }
+
+  // method to archive note
+  void archiveNote(String eventId) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (_events[index].isArchived == false) {
+      _events[index].isArchived = true;
+    }
+    notifyListeners();
+  }
 }
