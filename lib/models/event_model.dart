@@ -8,15 +8,25 @@ class EventModel {
   String? note;
   List<String>? tags;
   String? category;
+
+// default type of task for user; for notifications
+  bool isReminder;
+
+  // for checkbox tasks
   bool isCompleted;
   int streak;
 
-  EventModel({
-    required this.event,
-    this.note,
-    this.tags,
-    this.category = "Home",
-    this.isCompleted = false,
-    this.streak = 0,
-  }) : id = Uuid().v4();
+  // for recurring tasks aka habit tasks; will be shown in habit section of task page
+  bool isRecurring;
+
+  EventModel(
+      {required this.event,
+      this.note,
+      this.tags,
+      this.category = "Home",
+      this.isCompleted = false,
+      this.streak = 0,
+      this.isRecurring = false,
+      this.isReminder = true})
+      : id = Uuid().v4();
 }
