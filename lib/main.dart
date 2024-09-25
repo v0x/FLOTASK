@@ -9,7 +9,6 @@ import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 
 // SCREENS
-
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
@@ -29,7 +28,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),

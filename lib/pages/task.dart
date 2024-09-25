@@ -52,6 +52,7 @@ class _TaskPageState extends State<TaskPage> {
               Expanded(
                 // Wrap the ListView.builder in Expanded to give it available space
                 child: ListView.builder(
+                  // only show archived tasks
                   itemCount: eventProvider.events
                       .where((element) => element.isArchived)
                       .length,
@@ -62,46 +63,103 @@ class _TaskPageState extends State<TaskPage> {
 
                     final archivedEvent = archivedEvents[index];
 
-                    return ListTile(
-                      title: Text(archivedEvent.event
-                          .title), // assuming title is directly in archivedEvent
-                      subtitle: Text(
-                          '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}'),
-                      onTap: () {
-                        // Navigate to the event detail page when clicked
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                EventDetailWithNotes(event: archivedEvent),
+                    return Slidable(
+                        endActionPane:
+                            ActionPane(motion: ScrollMotion(), children: [
+                          SlidableAction(
+                            // An action can be bigger than the others.
+                            flex: 2,
+                            onPressed: (context) {
+                              context
+                                  .read<EventProvider>()
+                                  .unarchiveNote(archivedEvent.id);
+                            },
+                            backgroundColor: Color(0xFF7BC043),
+                            foregroundColor: Colors.white,
+                            icon: Icons.archive,
+                            label: 'Unarchive',
                           ),
-                        );
-                      },
-                    );
+                        ]),
+                        child: ListTile(
+                          title: Text(archivedEvent.event
+                              .title), // assuming title is directly in archivedEvent
+                          subtitle: Text(
+                              '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}'),
+                          onTap: () {
+                            // Navigate to the event detail page when clicked
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EventDetailWithNotes(event: archivedEvent),
+                              ),
+                            );
+                          },
+                        ));
                   },
                 ),
               ),
             ],
           ),
         ),
+
+        // actual list of tasks in task page NOT side drawer
         body: ListView.builder(
           itemCount: eventProvider.events.length,
           itemBuilder: (context, index) {
             final event = eventProvider.events[index];
-            return ListTile(
-              title: Text(event.event.title),
-              subtitle: Text(
-                  '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
-              onTap: () {
-                // Navigate to the event detail page when clicked
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventDetailWithNotes(event: event),
+
+            return Slidable(
+                // The end action pane is the one at the right or the bottom side.
+                endActionPane: ActionPane(
+                  motion: ScrollMotion(),
+                  children: [
+                    SlidableAction(
+                      // An action can be bigger than the others.
+                      flex: 2,
+                      onPressed: (context) {
+                        context.read<EventProvider>().archiveNote(event.id);
+                      },
+                      backgroundColor: Color(0xFF7BC043),
+                      foregroundColor: Colors.white,
+                      icon: Icons.archive,
+                      label: 'Archive',
+                    ),
+                    // SlidableAction(
+                    //   // onPressed: doNothing,
+                    //   backgroundColor: Color(0xFF0392CF),
+                    //   foregroundColor: Colors.white,
+                    //   icon: Icons.save,
+                    //   label: 'Save',
+                    // ),
+                  ],
+                ),
+                child: Container(
+                  color:
+                      event.isArchived ? Colors.grey[400] : Colors.transparent,
+                  child: ListTile(
+                    title: Text(
+                      event.event.title,
+                      style: TextStyle(
+                        decoration: event.isArchived
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+                    subtitle: Text(
+                        '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
+                    onTap: () {
+                      // Navigate to the event detail page when clicked
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              EventDetailWithNotes(event: event),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            );
+                ));
           },
         ));
   }

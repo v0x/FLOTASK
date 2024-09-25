@@ -98,4 +98,14 @@ class EventProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  // method to unarchive note
+  void unarchiveNote(String eventId) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (_events[index].isArchived == true) {
+      _events[index].isArchived = false;
+    }
+    notifyListeners();
+  }
 }
