@@ -14,7 +14,9 @@ class EventModel {
 
   // for checkbox tasks
   bool isCompleted;
-  int streak;
+  int dayStreak;
+  int monthStreak;
+  int yearStreak;
 
   // for recurring tasks aka habit tasks; will be shown in habit section of task page
   bool isRecurring;
@@ -22,21 +24,17 @@ class EventModel {
   // to keep track of when the user completes a task
   DateTime? lastCompletedDate;
 
-  Recurrence? recurrenceType;
-
-  EventModel(
-      {required this.event,
-      this.note,
-      this.tags,
-      this.category = "Home",
-      this.isCompleted = false,
-      this.streak = 0,
-      this.isRecurring = false,
-      this.isReminder = true,
-      this.lastCompletedDate,
-      this.recurrenceType})
-      : id = Uuid().v4();
+  EventModel({
+    required this.event,
+    this.note,
+    this.tags,
+    this.category = "Home",
+    this.isCompleted = false,
+    this.dayStreak = 0,
+    this.monthStreak = 0,
+    this.yearStreak = 0,
+    this.isRecurring = false,
+    this.isReminder = true,
+    this.lastCompletedDate,
+  }) : id = Uuid().v4();
 }
-
-// type of recurrence to take into account when using streaks
-enum Recurrence { daily, monthly, yearly }

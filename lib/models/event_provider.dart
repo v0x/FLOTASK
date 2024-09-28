@@ -60,60 +60,32 @@ class EventProvider extends ChangeNotifier {
           today.difference(event.lastCompletedDate!).inDays;
 
       if (differenceInDays == 1) {
-        event.streak++;
+        event.dayStreak++;
       } else if (differenceInDays > 1) {
-        event.streak = 0;
+        event.dayStreak = 0;
       }
 
-      // Check if a new month is reached
-      if (isNewMonth(event.lastCompletedDate!, today)) {
-        print("New month milestone reached!");
+      if (event.dayStreak >= daysInMonth(today)) {
+        event.monthStreak++;
 
-        // display widget
-      }
-
-      // display yearly flair
-      if (isNewYear(event.lastCompletedDate!, today)) {
-        print("New yearly milestone reached!");
+        if (event.monthStreak >= 12) {
+          event.yearStreak++;
+        }
       }
     } else {
-      event.streak = 1;
+      event.dayStreak = 1;
     }
 
     event.lastCompletedDate = today;
+
+    notifyListeners();
   }
 
-// add new flair if a new motnh has been reached
-  bool isNewMonth(DateTime lastCompletedDate, DateTime currentDate) {
-    return (currentDate.year > lastCompletedDate.year) ||
-        (currentDate.year == lastCompletedDate.year &&
-            currentDate.month > lastCompletedDate.month);
-  }
-
-// add new flair if new year has been reached
-  bool isNewYear(DateTime lastCompletedDate, DateTime currentDate) {
-    return currentDate.year > lastCompletedDate.year;
-  }
-
-  Widget displayFlair(int streakCount, DateTime lastCompletedDate) {
-    final today = DateTime.now();
-
-    // Check for yearly flair
-    if (isNewYear(lastCompletedDate, today)) {
-      return Icon(Icons.cake, color: Colors.amber); // Yearly milestone flair
-    }
-
-    // Check for monthly flair
-    if (isNewMonth(lastCompletedDate, today)) {
-      return Icon(Icons.calendar_today,
-          color: Colors.purple); // Monthly milestone flair
-    }
-
-    // Display daily flair based on streak count
-    if (streakCount >= 7) {
-      return Icon(Icons.whatshot, color: Colors.red); // Weekly streak flair
-    }
-
-    return SizedBox(); // No flair for small streaks
+// function to find days in month
+  int daysInMonth(DateTime date) {
+    var beginningNextMonth = (date.month < 12)
+        ? DateTime(date.year, date.month + 1, 1)
+        : DateTime(date.year + 1, 1, 1);
+    return beginningNextMonth.subtract(Duration(days: 1)).day;
   }
 }
