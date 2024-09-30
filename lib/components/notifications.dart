@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 /*Notification Type Selected: Local
  *Why?: It can run in background even if the app itself is closed
@@ -31,9 +31,9 @@ class Task {
 
 List<Task> tasks = [
   Task(id: 0, taskName: "Task 1", daily: true, completed: true, setReminderHour: 21, setReminderMinute: 0),
-  Task(id: 1, taskName: "Task 2", daily: false, completed: false,setReminderHour: 5, setReminderMinute: 40),
-  Task(id: 2, taskName: "Task 3", daily: false, completed: true, setReminderHour: 19, setReminderMinute: 14),
-  Task(id: 3, taskName: "Task 4", daily: true, completed: false, setReminderHour: 14, setReminderMinute: 21),
+  Task(id: 1, taskName: "Task 2", daily: false, completed: false,setReminderHour: 16, setReminderMinute: 55),
+  Task(id: 2, taskName: "Task 3", daily: false, completed: true, setReminderHour: 16, setReminderMinute: 54),
+  Task(id: 3, taskName: "Task 4", daily: true, completed: false, setReminderHour: 16, setReminderMinute: 56),
 ];
 
 class Notifications{
@@ -50,7 +50,7 @@ class Notifications{
     //Timezone Related
     tz.initializeTimeZones();
     //Grabbing timezone info from the device
-    String deviceTZ = await FlutterNativeTimezone.getLocalTimezone();
+    String deviceTZ = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(deviceTZ));
     //Notifications Related
     //ic_launcher is used by android to display app icon in notifications
@@ -59,6 +59,8 @@ class Notifications{
     final InitializationSettings initializationSettings 
       = InitializationSettings(android: androidInitializationSettings);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    requestPerms(flutterLocalNotificationsPlugin);
+    scheduleNotifsForTasks(tasks, flutterLocalNotificationsPlugin);
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hourSpecified, int minuteSpecified) {
@@ -89,11 +91,32 @@ class Notifications{
 
   Future<void> setupNotif(Task task, FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
     tz.TZDateTime scheduledDate = _nextInstanceOfTime(task.setReminderHour, task.setReminderMinute);
+    tz.TZDateTime lastMinute = _nextInstanceOfTime(23, 0);
     await flutterLocalNotificationsPlugin.zonedSchedule(
       task.id, //Notif ID: Using enum index for the notification ID.
       task.taskName, //Title
-      'You have not watered your plants today! Lets help the grow!', //Notifcation Description
+      "You haven't watered your plants today! Let's help them grow!", //Notifcation Description
       scheduledDate, //Date
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'task_channel_id', //ChannelID
+          'Tasks', //Channel
+          channelDescription: 'Channel for task notifications', //Channel Description
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: task.daily ? DateTimeComponents.time : null, 
+      //If the daily value is true, repeat notification everday, if not, don't.
+    );
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      task.id+1000, //Notif ID: Using enum index for the notification ID.
+      task.taskName, //Title
+      "Time's almost up for today! Let's water the plants before time runs out!", //Notifcation Description
+      lastMinute, //Date
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'task_channel_id', //ChannelID

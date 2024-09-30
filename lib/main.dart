@@ -8,6 +8,9 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 
+// COMPONENTS
+import 'package:flotask/components/notifications.dart';
+
 // SCREENS
 
 import 'package:flotask/pages/home.dart';
@@ -19,6 +22,9 @@ import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Notifications notifications = Notifications();
+  await notifications.initState();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
