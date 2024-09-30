@@ -26,6 +26,7 @@ class _TaskPageState extends State<TaskPage> {
               builder: (context) => IconButton(
                 icon: const Icon(Icons.menu),
                 onPressed: () {
+                  // the right side of appbar drawer
                   Scaffold.of(context).openEndDrawer();
                 },
               ),
@@ -50,7 +51,6 @@ class _TaskPageState extends State<TaskPage> {
                 ),
               ),
               Expanded(
-                // Wrap the ListView.builder in Expanded to give it available space
                 child: ListView.builder(
                   // only show archived tasks
                   itemCount: eventProvider.events
@@ -63,6 +63,7 @@ class _TaskPageState extends State<TaskPage> {
 
                     final archivedEvent = archivedEvents[index];
 
+// slidable library used here. the child property is the actual widget being shown
                     return Slidable(
                         endActionPane:
                             ActionPane(motion: ScrollMotion(), children: [
@@ -81,8 +82,7 @@ class _TaskPageState extends State<TaskPage> {
                           ),
                         ]),
                         child: ListTile(
-                          title: Text(archivedEvent.event
-                              .title), // assuming title is directly in archivedEvent
+                          title: Text(archivedEvent.event.title),
                           subtitle: Text(
                               '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}'),
                           onTap: () {
@@ -134,6 +134,8 @@ class _TaskPageState extends State<TaskPage> {
                     // ),
                   ],
                 ),
+
+                // logic to show crossed out text and gray background
                 child: Container(
                   color:
                       event.isArchived ? Colors.grey[400] : Colors.transparent,
