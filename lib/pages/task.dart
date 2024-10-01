@@ -179,7 +179,7 @@ class _TaskPageState extends State<TaskPage> {
                     //     ),
                     //   ),
                     subtitle: Text(
-                        '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
+                        '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)} \nStreak: ${event.dayStreak!}'),
                     onTap: () {
                       // Navigate to the event detail page when clicked
                       Navigator.push(
