@@ -1,11 +1,21 @@
+
+// FLUTTER CORE PACKAGES
+import 'package:flotask/models/event_model.dart';
+import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'package:flotask/pages/calendar.dart';
+import 'package:calendar_view/calendar_view.dart';
+
+// SCREENS
 import 'package:flotask/pages/home.dart';
-import 'package:flotask/pages/pomodoro.dart';
+import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
+import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +40,17 @@ class MainApp extends StatelessWidget {
         ),
       ),
       home: const BottomNav(), // Main navigation using BottomNav widget
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => EventProvider()),
+      ],
+      child: MaterialApp(
+        home: RootLayout(),
+        theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+                seedColor: Color.fromARGB(255, 235, 216, 182))),
+      ),
     );
   }
 }
@@ -55,6 +76,7 @@ class _BottomNavState extends State<BottomNav> {
         const CalendarPage(),// Index 2: Calendar Page
         const PomodoroPage(),// Index 3: Pomodoro Page
         const ProgressPage(),// Index 4: Progress Page
+        const UserProfile(),// Index 5: User Profile Page
       ][currentPageIndex],
 
       // Defines the bottom navigation bar with icons and highlights based on the selected tab.
@@ -86,6 +108,10 @@ class _BottomNavState extends State<BottomNav> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, size: 30),
             label: '',
           ),
         ],

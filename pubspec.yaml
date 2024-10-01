@@ -1,16 +1,25 @@
 name: flotask
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
-  sdk: '>=3.3.4 <4.0.0'
+  sdk: ">=3.3.4 <4.0.0"
 
 dependencies:
+  calendar_view: ^1.2.0
   cloud_firestore: ^4.17.3
   firebase_core: ^2.31.0
+  image_picker: ^0.8.7+3
   flutter:
     sdk: flutter
+  intl: ^0.19.0
+
+  markdown_editor_plus: ^0.2.15
+  provider: ^6.1.2
+  uuid: ^4.5.0
+
+
 
 dev_dependencies:
   flutter_test:
