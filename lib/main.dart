@@ -1,4 +1,3 @@
-
 // FLUTTER CORE PACKAGES
 import 'package:flotask/models/event_model.dart';
 import 'package:flotask/models/event_provider.dart';
@@ -29,27 +28,21 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // Hides the debug banner
-      theme: ThemeData(
-        primaryColor: const Color(0xFFF8F8F8), // Set primary color to pastel white
-        scaffoldBackgroundColor: const Color(0xFFF8F8F8), // Apply same pastel white to the background
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color(0xFFF8F8F8), // Consistently use pastel white
-        ),
-      ),
-      home: const BottomNav(), // Main navigation using BottomNav widget
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
       ],
       child: MaterialApp(
-        home: RootLayout(),
+        debugShowCheckedModeBanner: false, // Hides the debug banner
         theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-                seedColor: Color.fromARGB(255, 235, 216, 182))),
+          primaryColor: const Color(0xFFF8F8F8), // Set primary color to pastel white
+          scaffoldBackgroundColor: const Color(0xFFF8F8F8), // Apply same pastel white to the background
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          colorScheme: ColorScheme.fromSwatch().copyWith(
+            primary: const Color(0xFFF8F8F8), // Consistently use pastel white
+          ),
+        ),
+        home: const BottomNav(), // Main navigation using BottomNav widget
       ),
     );
   }
@@ -72,11 +65,11 @@ class _BottomNavState extends State<BottomNav> {
     return Scaffold(
       body: [
         HomePage(),    // Index 0: Home Page
-        const TaskPage(),    // Index 1: Task Page
-        const CalendarPage(),// Index 2: Calendar Page
-        const PomodoroPage(),// Index 3: Pomodoro Page
-        const ProgressPage(),// Index 4: Progress Page
-        const UserProfile(),// Index 5: User Profile Page
+        TaskPage(),    // Index 1: Task Page
+        CalendarPage(),// Index 2: Calendar Page
+        PomodoroPage(),// Index 3: Pomodoro Page
+        ProgressPage(),// Index 4: Progress Page
+        UserProfilePage(),// Index 5: User Profile Page
       ][currentPageIndex],
 
       // Defines the bottom navigation bar with icons and highlights based on the selected tab.
