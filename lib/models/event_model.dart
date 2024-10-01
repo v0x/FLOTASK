@@ -14,6 +14,8 @@ class EventModel {
 
   // for checkbox tasks
   bool isCompleted;
+
+  // for streaks functionality
   int dayStreak;
   int monthStreak;
   int yearStreak;

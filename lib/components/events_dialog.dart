@@ -38,6 +38,8 @@ class _EventDialogState extends State<EventDialog> {
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
 
+  bool _isRecurring = false;
+
   @override
   void initState() {
     super.initState();
@@ -135,6 +137,18 @@ class _EventDialogState extends State<EventDialog> {
                 line: 7,
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CheckboxListTile(
+                title: Text("Is this a recurring task?"),
+                value: _isRecurring,
+                onChanged: (bool? value) {
+                  setState(() {
+                    _isRecurring = value ?? false;
+                  });
+                },
+              ),
+            ),
             TextButton(
 
                 // main functionality to add an event to global EventModel class
@@ -157,8 +171,10 @@ class _EventDialogState extends State<EventDialog> {
 
                   widget.eventController.add(event);
 
-                  eventProvider
-                      .addEvent(event, note: "Some notes", tags: ["work"]);
+                  eventProvider.addEvent(event,
+                      note: "Some notes",
+                      tags: ["work"],
+                      isRecurring: _isRecurring);
                   print(eventProvider);
                   Navigator.of(context).pop();
                 },

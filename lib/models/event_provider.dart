@@ -13,12 +13,9 @@ class EventProvider extends ChangeNotifier {
 
   // Method to add a new event
   void addEvent(CalendarEventData eventData,
-      {String? note, List<String>? tags}) {
+      {String? note, List<String>? tags, bool? isRecurring}) {
     final newEvent = EventModel(
-      event: eventData,
-      note: note,
-      tags: tags,
-    );
+        event: eventData, note: note, tags: tags, isRecurring: isRecurring!);
 
     _events.add(newEvent);
     notifyListeners();
@@ -47,7 +44,7 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // method to update a streak if the task is completed within a day
+  // method to update a streak if the task is completed within a day, then streak of a month and year
   void updateStreak(String eventId) {
     final today = DateTime.now();
 
@@ -106,6 +103,14 @@ class EventProvider extends ChangeNotifier {
     if (_events[index].isArchived == true) {
       _events[index].isArchived = false;
     }
+    notifyListeners();
+  }
+
+  void toggleComplete(String eventId, bool value) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    _events[index].isCompleted = !_events[index].isCompleted;
+
     notifyListeners();
   }
 }

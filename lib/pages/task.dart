@@ -140,14 +140,44 @@ class _TaskPageState extends State<TaskPage> {
                   color:
                       event.isArchived ? Colors.grey[400] : Colors.transparent,
                   child: ListTile(
-                    title: Text(
-                      event.event.title,
-                      style: TextStyle(
-                        decoration: event.isArchived
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
+                    title: Row(
+                      children: [
+                        // Conditionally show checkbox for recurring tasks
+                        if (event.isRecurring)
+                          Checkbox(
+                            value: event
+                                .isCompleted, // Assuming event has an isCompleted property
+                            onChanged: (bool? value) {
+                              setState(() {
+                                // Update the completion status of the recurring event
+                                eventProvider.toggleComplete(
+                                    event.id, value ?? false);
+
+                                eventProvider.updateStreak(event.id);
+                              });
+                            },
+                          ),
+                        Expanded(
+                          child: Text(
+                            event.event.title,
+                            style: TextStyle(
+                              decoration: event.isArchived
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    // child: ListTile(
+                    //   title: Text(
+                    //     event.event.title,
+                    //     style: TextStyle(
+                    //       decoration: event.isArchived
+                    //           ? TextDecoration.lineThrough
+                    //           : TextDecoration.none,
+                    //     ),
+                    //   ),
                     subtitle: Text(
                         '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
                     onTap: () {
