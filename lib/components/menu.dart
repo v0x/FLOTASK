@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flotask/components/resource.dart';
 
 class Menu extends StatelessWidget {
   @override
@@ -34,7 +35,10 @@ class Menu extends StatelessWidget {
                     buildMenuItem(
                       icon: Icons.book,
                       title: 'Resources',
-                      onTap: () => print('Resources clicked'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ResourcesPage()), // Navigating to ResourcePage
+                      ),
                     ),
                     buildMenuItem(
                       icon: Icons.settings,
