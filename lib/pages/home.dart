@@ -1,23 +1,5 @@
-import 'dart:async'; // For Timer
 import 'package:flutter/material.dart';
 import 'package:flotask/components/menu.dart';
-
-class MyHome extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primaryColor: Color(0xFFA7C7E7), // Pastel blue sky color
-        scaffoldBackgroundColor: Color(0xFFA7C7E7), // Pastel blue for the background
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        textTheme: TextTheme(
-          bodyMedium: TextStyle(color: Colors.black.withOpacity(0.7)), // Slightly transparent text
-        ),
-      ),
-      home: HomePage(),
-    );
-  }
-}
 
 class HomePage extends StatefulWidget {
   @override
@@ -27,73 +9,35 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
-  late Timer _timer;
-
-  // Create a GlobalKey to control the Scaffold
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  // List of dynamic messages
-  final List<String> _dynamicMessages = [
-    'How are you today?',
-    'Stay focused!',
-    'Keep going!',
-    'Almost done!',
-    'You got this!',
-  ];
-
-  // List of pastel colors
-  final List<Color> _pastelColors = [
-    Color(0xFFFFF9C4), // Light yellow
-    Color(0xFFFFCCBC), // Light peach
-    Color(0xFFB2EBF2), // Light cyan
-    Color(0xFFC8E6C9), // Light green
-    Color(0xFFD1C4E9), // Light purple
-  ];
-
-  String _currentMessage = ''; 
-  Color _currentColor = Color(0xFFFFF9C4); // Initial color (light yellow)
-  bool _greetingShown = false; // Track if greeting message is already shown
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); // Controls the Drawer
+  String _currentMessage = ''; // Holds the time-based greeting message
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation for floating effect
+    // Initialize animation for a floating effect on the greeting message
     _controller = AnimationController(
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat(reverse: true);
 
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.1),
-      end: Offset(0, -0.1),
+      begin: const Offset(0, 0.1),
+      end: const Offset(0, -0.1),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // Set initial greeting based on time of day
     _currentMessage = _getTimeBasedGreeting();
-
-    // Timer to switch between messages every 5 seconds and change color
-    _timer = Timer.periodic(Duration(seconds: 5), (Timer timer) {
-      setState(() {
-        if (_greetingShown) {
-          // Change message and color
-          _currentMessage = _dynamicMessages[timer.tick % _dynamicMessages.length];
-          _currentColor = _pastelColors[timer.tick % _pastelColors.length];
-        } else {
-          _greetingShown = true; // Greeting message has been shown
-        }
-      });
-    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _timer.cancel(); // Cancel timer when the widget is disposed
+    _controller.dispose(); // Dispose animation controller to free resources
     super.dispose();
   }
 
-  // Get greeting message based on current time
+  // Get greeting message based on the current time of day
   String _getTimeBasedGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) return 'Good Morning!';
@@ -104,19 +48,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Use the key to control the Scaffold
-      drawer: Menu(), // Drawer with menu items
+      key: _scaffoldKey,
+      drawer: Menu(), // Side menu using the Menu widget
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
+        elevation: 0, // Flat, clean AppBar with no shadow
         leading: IconButton(
-          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 36), // Larger and bolder dotted menu icon
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(), // Use the GlobalKey to open the drawer
+          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32), 
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(), // Opens the Drawer via GlobalKey
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.person_outline_rounded, size: 40, color: Colors.black.withOpacity(0.7)), // Modern profile icon
-            onPressed: () => print('Profile clicked'),
+            icon: Icon(Icons.person_outline_rounded, size: 36, color: Colors.black.withOpacity(0.7)),
+            onPressed: () => print('Profile clicked'), // Placeholder for profile functionality
           ),
         ],
       ),
@@ -125,57 +69,62 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 20),
+            const SizedBox(height: 20), // Adds space above the greeting card
             SlideTransition(
-              position: _slideAnimation, // Floating effect for greeting/message
-              child: _buildMessageCard(_currentMessage, _currentColor),
+              position: _slideAnimation, // Applies the floating effect to the message card
+              child: _buildMessageCard(_currentMessage),
             ),
-            SizedBox(height: 20),
-            // Add other components here (e.g., task list)
+            const SizedBox(height: 20),
+            // Add other components like a task list here
           ],
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20), // Move FloatingActionButton up by 20 pixels
+        padding: const EdgeInsets.only(bottom: 20),
         child: FloatingActionButton(
-          onPressed: _showAddTaskDialog, // Add new task
-          child: Icon(Icons.add, size: 36), // Larger, more bubbly icon
-          backgroundColor: Color(0xFFD2B48C), // Light brown/beige color
+          onPressed: _showAddTaskDialog, // Opens a dialog to add a new task
+          child: const Icon(Icons.add, size: 36), // Large add icon for a clear call to action
+          backgroundColor: const Color(0xFFD2B48C), // Light brown/beige color
           tooltip: 'Add Task',
-          elevation: 10, // Add some elevation to give a floating, bubbly effect
+          elevation: 10, // Creates a floating effect
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30), // More circular shape for a bubbly appearance
+            borderRadius: BorderRadius.circular(30), // Circular, bubbly appearance
           ),
         ),
       ),
     );
   }
 
-  // Build message card with floating effect and dynamic color
-  Widget _buildMessageCard(String message, Color color) {
+  // Builds the greeting message card with a floating effect
+  Widget _buildMessageCard(String message) {
     return Container(
-      padding: EdgeInsets.all(16.0),
+      width: 200, // Defines a fixed width for the message card
+      padding: const EdgeInsets.all(12.0), // Adjust padding for a more compact design
       decoration: BoxDecoration(
-        color: color.withOpacity(0.8), // Dynamic background color
-        borderRadius: BorderRadius.circular(30),
+        color: const Color(0xFFFBE9E7).withOpacity(0.8), // Soft peach color with transparency
+        borderRadius: BorderRadius.circular(20), // Rounded corners for a softer look
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            spreadRadius: 3,
-            blurRadius: 10,
-            offset: Offset(0, 3), // Floating shadow effect
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 3), // Creates a subtle floating shadow
           ),
         ],
       ),
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 24, color: Colors.black.withOpacity(0.7), fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 18, // Compact font size
+          color: Colors.black.withOpacity(0.7),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
-  // Dialog to add new task
+  // Opens a dialog to add a new task
   void _showAddTaskDialog() {
     final TextEditingController _taskController = TextEditingController();
 
@@ -200,14 +149,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               onPressed: () {
                 final task = _taskController.text;
                 if (task.isNotEmpty) {
-                  print('Task added: $task');
-                  Navigator.pop(context); // Close the dialog after adding task
+                  print('Task added: $task'); // Placeholder for task addition logic
+                  Navigator.pop(context); // Closes the dialog
                 }
               },
               child: Text('Add', style: TextStyle(color: Colors.black.withOpacity(0.7))),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context), // Closes the dialog without adding a task
               child: Text('Cancel', style: TextStyle(color: Colors.black.withOpacity(0.7))),
             ),
           ],
