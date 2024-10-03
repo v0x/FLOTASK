@@ -14,6 +14,19 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPageState extends State<TaskPage> {
+  // Method to determine the color based on streak type
+  Color getStreakColor(int dayStreak, int monthStreak, int yearStreak) {
+    if (yearStreak > 0) {
+      return Colors.yellow; // Yearly streak - gold color
+    } else if (monthStreak > 0) {
+      return Colors.blue; // Monthly streak - blue color
+    } else if (dayStreak > 0) {
+      return Colors.green; // Daily streak - green color
+    } else {
+      return Colors.transparent; // No streak - no border
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventProvider = context.watch<EventProvider>();
@@ -109,6 +122,10 @@ class _TaskPageState extends State<TaskPage> {
           itemBuilder: (context, index) {
             final event = eventProvider.events[index];
 
+            // Get the border color based on the streak levels
+            final borderColor = getStreakColor(event.dayStreak ?? 0,
+                event.monthStreak ?? 0, event.yearStreak ?? 0);
+
             return Slidable(
                 // The end action pane is the one at the right or the bottom side.
                 endActionPane: ActionPane(
@@ -137,8 +154,17 @@ class _TaskPageState extends State<TaskPage> {
 
                 // logic to show crossed out text and gray background
                 child: Container(
-                  color:
-                      event.isArchived ? Colors.grey[400] : Colors.transparent,
+                  decoration: BoxDecoration(
+                    color: event.isArchived
+                        ? Colors.grey[400]
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: borderColor, // Apply the streak color as a border
+                      width: 2.0,
+                    ),
+                  ),
+                  // color:
+                  //     event.isArchived ? Colors.grey[400] : Colors.transparent,
                   child: ListTile(
                     title: Row(
                       children: [
