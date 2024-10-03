@@ -108,8 +108,42 @@ class EventProvider extends ChangeNotifier {
 
   void toggleComplete(String eventId, bool value) {
     final index = _events.indexWhere((element) => element.id == eventId);
+    final event = _events[index];
 
-    _events[index].isCompleted = !_events[index].isCompleted;
+    // Check if we are completing or undoing a task
+    if (value == true) {
+      // If checking the task, mark it as completed and update streak
+      event.isCompleted = true;
+      updateStreak(eventId); // Update the streak logic
+    } else {
+      // If unchecking, undo the completion and reduce the streak
+      event.isCompleted = false;
+
+      if (event.lastCompletedDate != null) {
+        final today = DateTime.now();
+        final differenceInDays =
+            today.difference(event.lastCompletedDate!).inDays;
+
+        // Check if we need to roll back the streak (only if the task was completed today)
+        if (differenceInDays == 0) {
+          // Reduce day streak
+          event.dayStreak = event.dayStreak > 0 ? event.dayStreak - 1 : 0;
+
+          // If day streak reaches below days in month, adjust the month streak
+          if (event.dayStreak < daysInMonth(today) && event.monthStreak > 0) {
+            event.monthStreak--;
+
+            // If month streak is undone, adjust the year streak if necessary
+            if (event.monthStreak < 12 && event.yearStreak > 0) {
+              event.yearStreak--;
+            }
+          }
+
+          // Set last completed date to null to indicate it's undone
+          event.lastCompletedDate = null;
+        }
+      }
+    }
 
     notifyListeners();
   }

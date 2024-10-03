@@ -153,7 +153,9 @@ class _TaskPageState extends State<TaskPage> {
                                 eventProvider.toggleComplete(
                                     event.id, value ?? false);
 
-                                eventProvider.updateStreak(event.id);
+                                if (value == true) {
+                                  eventProvider.updateStreak(event.id);
+                                }
                               });
                             },
                           ),
