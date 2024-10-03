@@ -3,6 +3,9 @@ import 'package:uuid/uuid.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'event_model.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
 // the global state for handling all events within our app
 class EventProvider extends ChangeNotifier {
   // List of events
@@ -11,14 +14,36 @@ class EventProvider extends ChangeNotifier {
   // Get the list of events
   List<EventModel> get events => _events;
 
+  // Firestore instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   // Method to add a new event
-  void addEvent(CalendarEventData eventData,
-      {String? note, List<String>? tags, bool? isRecurring}) {
+  Future<void> addEvent(CalendarEventData eventData,
+      {String? note, List<String>? tags, bool? isRecurring}) async {
     final newEvent = EventModel(
         event: eventData, note: note, tags: tags, isRecurring: isRecurring!);
 
     _events.add(newEvent);
     notifyListeners();
+
+// Save the event to Firestore
+    await _firestore.collection('events').add({
+      'id': newEvent.event.hashCode,
+      'title': newEvent.event.title,
+      'description': newEvent.event.description,
+      'startDate': newEvent.event.date.toIso8601String(),
+      'endDate': newEvent.event.endDate.toIso8601String(),
+      'startTime': newEvent.event.startTime?.toIso8601String(),
+      'endTime': newEvent.event.endTime?.toIso8601String(),
+      'isRecurring': newEvent.isRecurring,
+      'isCompleted': newEvent.isCompleted,
+      'dayStreak': newEvent.dayStreak,
+      'monthStreak': newEvent.monthStreak,
+      'yearStreak': newEvent.yearStreak,
+      'isArchived': newEvent.isArchived,
+      'note': newEvent.note,
+      'tags': newEvent.tags
+    });
   }
 
   // Method to remove an event
