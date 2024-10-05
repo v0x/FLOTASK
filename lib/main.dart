@@ -15,7 +15,7 @@ import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
-import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +36,7 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => EventProvider()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         home: RootLayout(),
         theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
