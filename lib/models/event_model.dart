@@ -3,7 +3,7 @@ import 'package:uuid/uuid.dart';
 
 // Model class for a user-created event; used globally for every feature
 class EventModel {
-  final String id;
+  String? id;
   CalendarEventData event;
   String? note;
   List<String>? tags;
@@ -41,6 +41,5 @@ class EventModel {
       this.isRecurring = false,
       this.isReminder = true,
       this.lastCompletedDate,
-      this.isArchived = false})
-      : id = Uuid().v4();
+      this.isArchived = false});
 }

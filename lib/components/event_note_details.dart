@@ -1,6 +1,5 @@
 import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:calendar_view/calendar_view.dart';
 import 'package:markdown_editor_plus/markdown_editor_plus.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +8,7 @@ import 'package:provider/provider.dart';
 // widget to show event details and markdown note section
 class EventDetailWithNotes extends StatefulWidget {
   // variable passed down from constructor
-  EventModel? event;
+  final EventModel? event;
 
   EventDetailWithNotes({this.event});
 
@@ -72,7 +71,7 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                 setState(() {
                   context
                       .read<EventProvider>()
-                      .updateNote(event.id, _noteController.text);
+                      .updateNote(event.id!, _noteController.text);
 
                   Navigator.pop(context);
                 });

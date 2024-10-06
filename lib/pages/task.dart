@@ -86,7 +86,7 @@ class _TaskPageState extends State<TaskPage> {
                             onPressed: (context) {
                               context
                                   .read<EventProvider>()
-                                  .unarchiveNote(archivedEvent.id);
+                                  .unarchiveNote(archivedEvent.id!);
                             },
                             backgroundColor: Color(0xFF7BC043),
                             foregroundColor: Colors.white,
@@ -135,7 +135,7 @@ class _TaskPageState extends State<TaskPage> {
                       // An action can be bigger than the others.
                       flex: 2,
                       onPressed: (context) {
-                        context.read<EventProvider>().archiveNote(event.id);
+                        context.read<EventProvider>().archiveNote(event.id!);
                       },
                       backgroundColor: Color(0xFF7BC043),
                       foregroundColor: Colors.white,
@@ -177,10 +177,10 @@ class _TaskPageState extends State<TaskPage> {
                               setState(() {
                                 // Update the completion status of the recurring event
                                 eventProvider.toggleComplete(
-                                    event.id, value ?? false);
+                                    event.id!, value ?? false);
 
                                 if (value == true) {
-                                  eventProvider.updateStreak(event.id);
+                                  eventProvider.updateStreak(event.id!);
                                 }
                               });
                             },

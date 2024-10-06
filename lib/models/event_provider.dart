@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'event_model.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 // the global state for handling all events within our app
 class EventProvider extends ChangeNotifier {
@@ -17,19 +15,48 @@ class EventProvider extends ChangeNotifier {
   // Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Load events from Firebase
+  Future<void> loadEventsFromFirebase() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    QuerySnapshot snapshot = await firestore.collection('events').get();
+
+    _events = snapshot.docs.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+      // Create EventModel from Firebase data
+      return EventModel(
+        // id: doc.id,
+        event: CalendarEventData(
+          title: data['event'],
+          date: DateTime.parse(data['date']),
+          endTime:
+              data['endTime'] != null ? DateTime.parse(data['endTime']) : null,
+        ),
+        note: data['note'] ?? '',
+        isRecurring: data['isRecurring'] ?? false,
+        isCompleted: data['isCompleted'] ?? false,
+        dayStreak: data['dayStreak'] ?? 0,
+        monthStreak: data['monthStreak'] ?? 0,
+        yearStreak: data['yearStreak'] ?? 0,
+        isArchived: data['isArchived'] ?? false,
+        tags: List<String>.from(data['tags'] ?? []),
+      );
+    }).toList();
+
+    notifyListeners();
+  }
+
   // Method to add a new event
   Future<void> addEvent(CalendarEventData eventData,
       {String? note, List<String>? tags, bool? isRecurring}) async {
     final newEvent = EventModel(
         event: eventData, note: note, tags: tags, isRecurring: isRecurring!);
 
-    _events.add(newEvent);
-    notifyListeners();
-
 // Save the event to Firestore
-    await _firestore.collection('events').add({
+    DocumentReference docRef = await _firestore.collection('events').add({
       'id': newEvent.event.hashCode,
       'title': newEvent.event.title,
+      'event': newEvent.event.event,
       'description': newEvent.event.description,
       'startDate': newEvent.event.date.toIso8601String(),
       'endDate': newEvent.event.endDate.toIso8601String(),
@@ -44,6 +71,11 @@ class EventProvider extends ChangeNotifier {
       'note': newEvent.note,
       'tags': newEvent.tags
     });
+
+    newEvent.id = docRef.id;
+
+    _events.add(newEvent);
+    notifyListeners();
   }
 
   // Method to remove an event
@@ -62,11 +94,21 @@ class EventProvider extends ChangeNotifier {
   }
 
   // method to update note
-  void updateNote(String eventId, String note) {
+  Future<void> updateNote(String eventId, String note) async {
     final index = _events.indexWhere((element) => element.id == eventId);
 
     _events[index].note = note;
     notifyListeners();
+
+    // update note in firebase now
+    if (_events[index].id != null) {
+      await FirebaseFirestore.instance
+          .collection('events')
+          .doc(_events[index].id)
+          .update({'note': note});
+    } else {
+      print('Error: Firebase ID is null for event ${_events[index].id}');
+    }
   }
 
   // method to update a streak if the task is completed within a day, then streak of a month and year

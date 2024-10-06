@@ -11,7 +11,6 @@ import 'package:intl/intl.dart';
 
 import 'package:flotask/main.dart';
 
-
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
@@ -21,7 +20,6 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage>
     with SingleTickerProviderStateMixin {
-
   // to manage tabs
   TabController? tabController;
 
@@ -30,19 +28,21 @@ class _CalendarPageState extends State<CalendarPage>
 
   String selectedPage = '';
 
-
   @override
   void initState() {
     tabController = TabController(length: 3, vsync: this);
     super.initState();
+
+    // Load events from Firebase on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EventProvider>().loadEventsFromFirebase();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     // get the state of the events with this line
     final eventProvider = context.watch<EventProvider>();
-
 
     return Scaffold(
         appBar: AppBar(
@@ -126,7 +126,6 @@ class _CalendarPageState extends State<CalendarPage>
                 ),
               );
             },
-
           ),
           WeekView(
             controller: _eventController,
@@ -191,7 +190,6 @@ class _CalendarPageState extends State<CalendarPage>
                     ));
           },
         ),
-
         drawer: Drawer(
           child: ListView(padding: EdgeInsets.zero, children: <Widget>[
             const DrawerHeader(
