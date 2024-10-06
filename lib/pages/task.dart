@@ -87,6 +87,10 @@ class _TaskPageState extends State<TaskPage> {
                               context
                                   .read<EventProvider>()
                                   .unarchiveNote(archivedEvent.id!);
+                              context
+                                  .read<EventProvider>()
+                                  .updateArchivedStatus(archivedEvent.id!,
+                                      archivedEvent.isArchived);
                             },
                             backgroundColor: Color(0xFF7BC043),
                             foregroundColor: Colors.white,
@@ -136,6 +140,9 @@ class _TaskPageState extends State<TaskPage> {
                       flex: 2,
                       onPressed: (context) {
                         context.read<EventProvider>().archiveNote(event.id!);
+                        context
+                            .read<EventProvider>()
+                            .updateArchivedStatus(event.id!, event.isArchived);
                       },
                       backgroundColor: Color(0xFF7BC043),
                       foregroundColor: Colors.white,

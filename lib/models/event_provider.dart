@@ -54,7 +54,7 @@ class EventProvider extends ChangeNotifier {
 
 // Save the event to Firestore
     DocumentReference docRef = await _firestore.collection('events').add({
-      'id': newEvent.event.hashCode,
+      // 'id': newEvent.event.hashCode,
       'title': newEvent.event.title,
       'event': newEvent.event.event,
       'description': newEvent.event.description,
@@ -108,6 +108,27 @@ class EventProvider extends ChangeNotifier {
           .update({'note': note});
     } else {
       print('Error: Firebase ID is null for event ${_events[index].id}');
+    }
+  }
+
+  Future<void> updateArchivedStatus(String eventId, bool isArchived) async {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (index != -1) {
+      _events[index].isArchived = isArchived;
+      notifyListeners();
+
+      // Update archived status in Firebase
+      if (_events[index].id != null) {
+        await FirebaseFirestore.instance
+            .collection('events')
+            .doc(_events[index].id)
+            .update({'isArchived': isArchived});
+      } else {
+        print('Error: Firebase ID is null for event ${_events[index].id}');
+      }
+    } else {
+      print('Error: Event not found with id $eventId');
     }
   }
 
