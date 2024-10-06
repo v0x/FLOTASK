@@ -9,6 +9,7 @@ environment:
 dependencies:
   calendar_view: ^1.2.0
   cloud_firestore: ^4.17.3
+  firebase_auth: ^4.20.0
   firebase_core: ^2.31.0
   image_picker: ^0.8.7+3
   flutter:
@@ -28,3 +29,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/background.jpg
