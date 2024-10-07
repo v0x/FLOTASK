@@ -69,7 +69,7 @@ class Menu extends StatelessWidget {
 
   // Builds individual menu items with icon and label
   Widget buildMenuItem({required IconData icon, required String title, required VoidCallback onTap}) {
-    final color = const Color(0xFFBCAAA4); // Light brown consistent with theme
+    final color = const Color(0xFF8D6E63); // Light brown consistent with theme
     return Material(
       color: Colors.transparent, // Keeps the menu background transparent
       child: ListTile(
