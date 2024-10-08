@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flotask/models/event_provider.dart';
-
+import 'package:flotask/models/event_model.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class TaskPage extends StatefulWidget {
@@ -31,203 +31,190 @@ class _TaskPageState extends State<TaskPage> {
   Widget build(BuildContext context) {
     final eventProvider = context.watch<EventProvider>();
 
+    // Separate completed and uncompleted tasks
+    final uncompletedTasks = eventProvider.events
+        .where((event) => !event.isCompleted && !event.isArchived)
+        .toList();
+    final completedTasks = eventProvider.events
+        .where((event) => event.isCompleted && !event.isArchived)
+        .toList();
+
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Task Page'),
-          actions: [
-            Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  // the right side of appbar drawer
-                  Scaffold.of(context).openEndDrawer();
+      appBar: AppBar(
+        title: const Text('Task Page'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                // the right side of appbar drawer
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+          ),
+        ],
+      ),
+
+      // side drawer to display list of archived tasks
+      endDrawer: Drawer(
+        child: Column(
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Archived Tasks',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                // only show archived tasks
+                itemCount: eventProvider.events
+                    .where((element) => element.isArchived)
+                    .length,
+                itemBuilder: (context, index) {
+                  final archivedEvents = eventProvider.events
+                      .where((element) => element.isArchived)
+                      .toList();
+
+                  final archivedEvent = archivedEvents[index];
+
+// slidable library used here. the child property is the actual widget being shown
+                  return Slidable(
+                      endActionPane:
+                          ActionPane(motion: ScrollMotion(), children: [
+                        SlidableAction(
+                          // An action can be bigger than the others.
+                          flex: 2,
+                          onPressed: (context) {
+                            context
+                                .read<EventProvider>()
+                                .unarchiveNote(archivedEvent.id!);
+                            context.read<EventProvider>().updateArchivedStatus(
+                                archivedEvent.id!, archivedEvent.isArchived);
+                          },
+                          backgroundColor: Color(0xFF7BC043),
+                          foregroundColor: Colors.white,
+                          icon: Icons.archive,
+                          label: 'Unarchive',
+                        ),
+                      ]),
+                      child: ListTile(
+                        title: Text(archivedEvent.event.title),
+                        subtitle: Text(
+                            '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}'),
+                        onTap: () {
+                          // Navigate to the event detail page when clicked
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EventDetailWithNotes(event: archivedEvent),
+                            ),
+                          );
+                        },
+                      ));
                 },
               ),
             ),
           ],
         ),
+      ),
 
-        // side drawer to display list of archived tasks
-        endDrawer: Drawer(
-          child: Column(
-            children: <Widget>[
-              const DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                ),
-                child: Text(
-                  'Archived Tasks',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  // only show archived tasks
-                  itemCount: eventProvider.events
-                      .where((element) => element.isArchived)
-                      .length,
-                  itemBuilder: (context, index) {
-                    final archivedEvents = eventProvider.events
-                        .where((element) => element.isArchived)
-                        .toList();
+      // actual list of tasks in task page NOT side drawer
+      body: ListView.builder(
+        itemCount: uncompletedTasks.length + completedTasks.length + 1,
+        itemBuilder: (context, index) {
+          if (index < uncompletedTasks.length) {
+            return _buildTaskItem(uncompletedTasks[index], context);
+          } else if (index == uncompletedTasks.length) {
+            return Padding(
+              padding: EdgeInsets.all(8),
+              child: Text('Completed Tasks',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            );
+          } else {
+            return _buildTaskItem(
+                completedTasks[index - uncompletedTasks.length - 1], context);
+          }
+        },
+      ),
+    );
+  }
 
-                    final archivedEvent = archivedEvents[index];
+// refactor to new widget that will be used for both uncompleted and completed tasks
+  Widget _buildTaskItem(EventModel event, BuildContext context) {
+    final borderColor = getStreakColor(
+        event.dayStreak ?? 0, event.monthStreak ?? 0, event.yearStreak ?? 0);
 
-// slidable library used here. the child property is the actual widget being shown
-                    return Slidable(
-                        endActionPane:
-                            ActionPane(motion: ScrollMotion(), children: [
-                          SlidableAction(
-                            // An action can be bigger than the others.
-                            flex: 2,
-                            onPressed: (context) {
-                              context
-                                  .read<EventProvider>()
-                                  .unarchiveNote(archivedEvent.id!);
-                              context
-                                  .read<EventProvider>()
-                                  .updateArchivedStatus(archivedEvent.id!,
-                                      archivedEvent.isArchived);
-                            },
-                            backgroundColor: Color(0xFF7BC043),
-                            foregroundColor: Colors.white,
-                            icon: Icons.archive,
-                            label: 'Unarchive',
-                          ),
-                        ]),
-                        child: ListTile(
-                          title: Text(archivedEvent.event.title),
-                          subtitle: Text(
-                              '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}'),
-                          onTap: () {
-                            // Navigate to the event detail page when clicked
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    EventDetailWithNotes(event: archivedEvent),
-                              ),
-                            );
-                          },
-                        ));
-                  },
-                ),
-              ),
-            ],
+    final eventProvider = context.read<EventProvider>();
+
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: ScrollMotion(),
+        children: [
+          SlidableAction(
+            flex: 2,
+            onPressed: (context) {
+              eventProvider.archiveNote(event.id!);
+              eventProvider.updateArchivedStatus(event.id!, true);
+            },
+            backgroundColor: Color(0xFF7BC043),
+            foregroundColor: Colors.white,
+            icon: Icons.archive,
+            label: 'Archive',
+          ),
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: event.isArchived ? Colors.grey[400] : Colors.transparent,
+          border: Border.all(
+            color: borderColor,
+            width: 2.0,
           ),
         ),
-
-        // actual list of tasks in task page NOT side drawer
-        body: ListView.builder(
-          itemCount: eventProvider.events.length,
-          itemBuilder: (context, index) {
-            final event = eventProvider.events[index];
-
-            // Get the border color based on the streak levels
-            final borderColor = getStreakColor(event.dayStreak ?? 0,
-                event.monthStreak ?? 0, event.yearStreak ?? 0);
-
-            return Slidable(
-                // The end action pane is the one at the right or the bottom side.
-                endActionPane: ActionPane(
-                  motion: ScrollMotion(),
-                  children: [
-                    SlidableAction(
-                      // An action can be bigger than the others.
-                      flex: 2,
-                      onPressed: (context) {
-                        context.read<EventProvider>().archiveNote(event.id!);
-                        context
-                            .read<EventProvider>()
-                            .updateArchivedStatus(event.id!, event.isArchived);
-                      },
-                      backgroundColor: Color(0xFF7BC043),
-                      foregroundColor: Colors.white,
-                      icon: Icons.archive,
-                      label: 'Archive',
-                    ),
-                    // SlidableAction(
-                    //   // onPressed: doNothing,
-                    //   backgroundColor: Color(0xFF0392CF),
-                    //   foregroundColor: Colors.white,
-                    //   icon: Icons.save,
-                    //   label: 'Save',
-                    // ),
-                  ],
-                ),
-
-                // logic to show crossed out text and gray background
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: event.isArchived
-                        ? Colors.grey[400]
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: borderColor, // Apply the streak color as a border
-                      width: 2.0,
-                    ),
-                  ),
-                  // color:
-                  //     event.isArchived ? Colors.grey[400] : Colors.transparent,
-                  child: ListTile(
-                    title: Row(
-                      children: [
-                        // Conditionally show checkbox for recurring tasks
-                        if (event.isRecurring)
-                          Checkbox(
-                            value: event
-                                .isCompleted, // Assuming event has an isCompleted property
-                            onChanged: (bool? value) {
-                              setState(() {
-                                // Update the completion status of the recurring event
-                                eventProvider.toggleComplete(
-                                    event.id!, value ?? false);
-
-                                if (value == true) {
-                                  eventProvider.updateStreak(event.id!);
-                                }
-                              });
-                            },
-                          ),
-                        Expanded(
-                          child: Text(
-                            event.event.title,
-                            style: TextStyle(
-                              decoration: event.isArchived
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // child: ListTile(
-                    //   title: Text(
-                    //     event.event.title,
-                    //     style: TextStyle(
-                    //       decoration: event.isArchived
-                    //           ? TextDecoration.lineThrough
-                    //           : TextDecoration.none,
-                    //     ),
-                    //   ),
-                    subtitle: Text(
-                        '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)} \nStreak: ${event.dayStreak!}'),
-                    onTap: () {
-                      // Navigate to the event detail page when clicked
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              EventDetailWithNotes(event: event),
-                        ),
-                      );
-                    },
-                  ),
-                ));
+        child: ListTile(
+          leading: Checkbox(
+            value: event.isCompleted,
+            onChanged: (bool? value) {
+              eventProvider.toggleComplete(event.id!, value ?? false);
+              if (value == true && event.isRecurring) {
+                eventProvider.updateStreak(event.id!);
+              }
+            },
+          ),
+          title: Text(
+            event.event.title,
+            style: TextStyle(
+              decoration: event.isCompleted
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                  '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
+              if (event.isRecurring) Text('Streak: ${event.dayStreak!} days'),
+            ],
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EventDetailWithNotes(event: event),
+              ),
+            );
           },
-        ));
+        ),
+      ),
+    );
   }
 }
