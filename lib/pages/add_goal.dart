@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_task.dart'; // Import add_task.dart
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'task.dart';
 
 // Stateful widget for AddGoalPage
 class AddGoalPage extends StatefulWidget {
@@ -80,7 +81,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
               _startDate != null ? Timestamp.fromDate(_startDate!) : null,
           'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
           'selectedTime': taskData['selectedTime'], // Specific time
-          //'selectedTime': _selectedTime != null ? _selectedTime!.format(context) : null,
+          'status': 'todo', // Set status as "todo" by default
         });
       }
 
@@ -94,6 +95,12 @@ class _AddGoalPageState extends State<AddGoalPage> {
       });
 
       print('Goal and tasks saved to Firestore');
+
+      // Navigate to the TaskPage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const TaskPage()),
+      );
     }
   }
 

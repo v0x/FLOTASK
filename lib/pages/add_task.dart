@@ -187,10 +187,21 @@ class _AddTaskPageState extends State<AddTaskPage> {
             // Add Task Button
             ElevatedButton(
               onPressed: () {
-                final task = _taskController.text;
-                if (task.isNotEmpty) {
-                  Navigator.pop(
-                      context, task); // Return the task to the AddGoalPage
+                final taskData = {
+                  'task': _taskController.text,
+                  'repeatInterval': _repeatIntervalNotifier.value,
+                  'startDate': _startDate,
+                  'endDate': _endDate,
+                  'selectedTime': _selectedTime?.format(context),
+                };
+
+                //final task = _taskController.text;
+                // if (task.isNotEmpty) {
+                //   Navigator.pop(
+                //       context, task); // Return the task to the AddGoalPage
+                // }
+                if (taskData['task'].toString().isNotEmpty) {
+                  Navigator.pop(context, taskData);
                 }
               },
               child: const Text('Add Task'),
