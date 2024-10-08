@@ -184,10 +184,10 @@ class _TaskPageState extends State<TaskPage> {
         child: ListTile(
           leading: Checkbox(
             value: event.isCompleted,
-            onChanged: (bool? value) {
-              eventProvider.toggleComplete(event.id!, value ?? false);
+            onChanged: (bool? value) async {
+              await eventProvider.toggleComplete(event.id!, value ?? false);
               if (value == true && event.isRecurring) {
-                eventProvider.updateStreak(event.id!);
+                await eventProvider.updateStreak(event.id!);
               }
             },
           ),

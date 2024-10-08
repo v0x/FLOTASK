@@ -17,33 +17,40 @@ class EventProvider extends ChangeNotifier {
 
   // Load events from Firebase
   Future<void> loadEventsFromFirebase() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    QuerySnapshot snapshot = await firestore.collection('events').get();
+    try {
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      QuerySnapshot snapshot = await firestore.collection('events').get();
 
-    _events = snapshot.docs.map((doc) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      _events = snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-      // Create EventModel from Firebase data
-      return EventModel(
-        // id: doc.id,
-        event: CalendarEventData(
-          title: data['event'],
-          date: DateTime.parse(data['date']),
-          endTime:
-              data['endTime'] != null ? DateTime.parse(data['endTime']) : null,
-        ),
-        note: data['note'] ?? '',
-        isRecurring: data['isRecurring'] ?? false,
-        isCompleted: data['isCompleted'] ?? false,
-        dayStreak: data['dayStreak'] ?? 0,
-        monthStreak: data['monthStreak'] ?? 0,
-        yearStreak: data['yearStreak'] ?? 0,
-        isArchived: data['isArchived'] ?? false,
-        tags: List<String>.from(data['tags'] ?? []),
-      );
-    }).toList();
+        // Create EventModel from Firebase data with null checks
+        return EventModel(
+          event: CalendarEventData(
+            title: data['event'] as String? ?? 'Untitled Event',
+            date: data['date'] != null
+                ? DateTime.parse(data['date'] as String)
+                : DateTime.now(),
+            endTime: data['endTime'] != null
+                ? DateTime.parse(data['endTime'] as String)
+                : null,
+          ),
+          note: data['note'] as String? ?? '',
+          isRecurring: data['isRecurring'] as bool? ?? false,
+          isCompleted: data['isCompleted'] as bool? ?? false,
+          dayStreak: data['dayStreak'] as int? ?? 0,
+          monthStreak: data['monthStreak'] as int? ?? 0,
+          yearStreak: data['yearStreak'] as int? ?? 0,
+          isArchived: data['isArchived'] as bool? ?? false,
+          tags: List<String>.from(data['tags'] ?? []),
+        );
+      }).toList();
 
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      print('Error loading events from Firebase: $e');
+      // Handle the error appropriately (e.g., show an error message to the user)
+    }
   }
 
   // Method to add a new event
@@ -133,7 +140,7 @@ class EventProvider extends ChangeNotifier {
   }
 
   // method to update a streak if the task is completed within a day, then streak of a month and year
-  void updateStreak(String eventId) {
+  Future<void> updateStreak(String eventId) async {
     final today = DateTime.now();
 
     final index = _events.indexWhere((element) => element.id == eventId);
@@ -162,6 +169,12 @@ class EventProvider extends ChangeNotifier {
     }
 
     event.lastCompletedDate = today;
+
+    await FirebaseFirestore.instance.collection('events').doc(event.id).update({
+      'dayStreak': event.dayStreak,
+      'monthStreak': event.monthStreak,
+      'yearStreak': event.yearStreak
+    });
 
     notifyListeners();
   }
@@ -194,7 +207,7 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleComplete(String eventId, bool value) {
+  Future<void> toggleComplete(String eventId, bool value) async {
     final index = _events.indexWhere((element) => element.id == eventId);
     final event = _events[index];
 
@@ -232,6 +245,13 @@ class EventProvider extends ChangeNotifier {
         }
       }
     }
+
+    await FirebaseFirestore.instance.collection('events').doc(event.id).update({
+      'isCompleted': event.isCompleted,
+      'dayStreak': event.dayStreak,
+      'monthStreak': event.monthStreak,
+      'yearStreak': event.yearStreak
+    });
 
     notifyListeners();
   }
