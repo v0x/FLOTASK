@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flotask/components/resource.dart';
+import 'package:flotask/components/settings.dart';
 
 class Menu extends StatelessWidget {
   @override
@@ -43,7 +44,10 @@ class Menu extends StatelessWidget {
                     buildMenuItem(
                       icon: Icons.settings,
                       title: 'Settings',
-                      onTap: () => print('Settings clicked'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SettingsPage()), // Navigating to SettingsPage
+                      ),
                     ),
                     buildMenuItem(
                       icon: Icons.exit_to_app,
