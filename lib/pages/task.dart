@@ -149,8 +149,10 @@ class _TaskPageState extends State<TaskPage> {
 
 // refactor to new widget that will be used for both uncompleted and completed tasks
   Widget _buildTaskItem(EventModel event, BuildContext context) {
-    final borderColor = getStreakColor(
-        event.dayStreak ?? 0, event.monthStreak ?? 0, event.yearStreak ?? 0);
+    final borderColor = event.isRecurring
+        ? getStreakColor(
+            event.dayStreak ?? 0, event.monthStreak ?? 0, event.yearStreak ?? 0)
+        : Colors.transparent;
 
     final eventProvider = context.read<EventProvider>();
 
