@@ -49,7 +49,6 @@ class EventProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error loading events from Firebase: $e');
-      // Handle the error appropriately (e.g., show an error message to the user)
     }
   }
 
@@ -188,23 +187,33 @@ class EventProvider extends ChangeNotifier {
   }
 
   // method to archive note
-  void archiveNote(String eventId) {
+  Future<void> archiveNote(String eventId) async {
     final index = _events.indexWhere((element) => element.id == eventId);
 
     if (_events[index].isArchived == false) {
       _events[index].isArchived = true;
     }
+
+    await FirebaseFirestore.instance
+        .collection('events')
+        .doc(_events[index].id)
+        .update({'isCompleted': _events[index].isArchived});
     notifyListeners();
   }
 
   // method to unarchive note
-  void unarchiveNote(String eventId) {
+  Future<void> unarchiveNote(String eventId) async {
     final index = _events.indexWhere((element) => element.id == eventId);
 
     if (_events[index].isArchived == true) {
       _events[index].isArchived = false;
     }
     notifyListeners();
+
+    await FirebaseFirestore.instance
+        .collection('events')
+        .doc(_events[index].id)
+        .update({'isCompleted': _events[index].isArchived});
   }
 
   Future<void> toggleComplete(String eventId, bool value) async {
@@ -213,9 +222,8 @@ class EventProvider extends ChangeNotifier {
 
     // Check if we are completing or undoing a task
     if (value == true) {
-      // If checking the task, mark it as completed and update streak
       event.isCompleted = true;
-      updateStreak(eventId); // Update the streak logic
+      updateStreak(eventId);
     } else {
       // If unchecking, undo the completion and reduce the streak
       event.isCompleted = false;
