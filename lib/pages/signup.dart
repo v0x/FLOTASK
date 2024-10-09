@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:flutter/material.dart';
 
 //initialize FirebaseAuth instance
 final FirebaseAuth _auth = FirebaseAuth.instance;
+final FirebaseFirestore _firestore =
+    FirebaseFirestore.instance; // Firestore instance
 
 //define the signup page as a stateful widget
 class SignupPage extends StatefulWidget {
@@ -13,6 +16,7 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   //controllers for email and password input fields
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   //Track if registration is successul
@@ -20,19 +24,45 @@ class _SignupPageState extends State<SignupPage> {
   String _userEmail = ''; //initialize with an empty string
   String _errorMessage = ''; // Initialize with an empty string
 
+  // Track password visibility state
+  bool _isPasswordVisible = false;
+
   //handle user registration
   void _register() async {
     setState(() {
       _errorMessage = ''; // Clear previous error message
     });
 
+    // Check if the username is unique
+    final username = _usernameController.text;
+    final email = _emailController.text;
+    //final password = _passwordController.text;
+
     try {
+      // Query Firestore to see if the username already exists
+      QuerySnapshot result = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+
+      if (result.docs.isNotEmpty) {
+        setState(() {
+          _errorMessage = 'Username already taken. Please choose another one.';
+        });
+        return; // Stop the registration process
+      }
+
       final User? user = (await _auth.createUserWithEmailAndPassword(
               email: _emailController.text, password: _passwordController.text))
           .user;
 
       //if registration is successful, update the state with successul message
       if (user != null) {
+        // Save the username and other user details to Firestore
+        await _firestore.collection('users').doc(user.uid).set({
+          'email': email,
+          'username': username,
+        });
         setState(() {
           _success = true;
           _userEmail = user.email!;
@@ -81,7 +111,7 @@ class _SignupPageState extends State<SignupPage> {
                     child: Stack(
                   children: <Widget>[
                     Container(
-                      padding: EdgeInsets.fromLTRB(15, 330, 0, 0),
+                      padding: EdgeInsets.fromLTRB(15, 280, 0, 0),
                       child: Text("Create your account",
                           style: TextStyle(
                               fontSize: 15, fontWeight: FontWeight.bold)),
@@ -90,7 +120,7 @@ class _SignupPageState extends State<SignupPage> {
                 )),
                 //form fields for email and password
                 Container(
-                  padding: EdgeInsets.only(top: 20, left: 20, right: 30),
+                  padding: EdgeInsets.only(top: 10, left: 20, right: 30),
                   child: Column(
                     children: <Widget>[
                       //email input field
@@ -105,19 +135,15 @@ class _SignupPageState extends State<SignupPage> {
                             focusedBorder: UnderlineInputBorder(
                               borderSide: BorderSide(color: Colors.green),
                             )),
-                        keyboardType: TextInputType
-                            .visiblePassword, // Example to avoid emoji
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       SizedBox(
-                        height: 20,
+                        height: 10,
                       ),
-
-                      //password input field
                       TextField(
-                        controller: _passwordController,
-                        //obscureText: true, // Keep password hidden
+                        controller: _usernameController,
                         decoration: InputDecoration(
-                            labelText: 'PASSWORD',
+                            labelText: 'USERNAME',
                             labelStyle: TextStyle(
                               fontFamily: 'Montserrat',
                               fontWeight: FontWeight.bold,
@@ -125,8 +151,39 @@ class _SignupPageState extends State<SignupPage> {
                             focusedBorder: UnderlineInputBorder(
                               borderSide: BorderSide(color: Colors.green),
                             )),
-                        keyboardType: TextInputType
-                            .visiblePassword, // Example to avoid emoji
+                        keyboardType: TextInputType.text,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+
+                      //password input field
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible, //hidden password
+                        decoration: InputDecoration(
+                            labelText: 'PASSWORD',
+                            labelStyle: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            suffixIcon: IconButton(
+                              //button to unhide password
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.green),
+                            )),
+                        keyboardType: TextInputType.text,
                       ),
                       SizedBox(
                         height: 5.0,
@@ -181,13 +238,22 @@ class _SignupPageState extends State<SignupPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
+                          Text(
+                            'Already have an account?',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          SizedBox(
+                              width:
+                                  5), // Add some spacing between the text and the log in link
                           InkWell(
                             onTap: () {
                               Navigator.of(context).pop(); //navigate back
                             },
-                            child: Text('GO BACK',
+                            child: Text('LOG IN',
                                 style: TextStyle(
-                                    color: Colors.blue,
+                                    color: Colors.black,
                                     fontFamily: 'Montserrat',
                                     fontWeight: FontWeight.bold,
                                     decoration: TextDecoration.underline)),
