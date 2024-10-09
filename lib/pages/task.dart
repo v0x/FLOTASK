@@ -126,34 +126,6 @@ class _TaskPageState extends State<TaskPage>
         children: [
           _buildTaskList('todo'), // Fetch and display "To-do" tasks
           _buildTaskList('completed'), // Fetch and display "Completed" tasks
-          // // To-do section
-          // Container(
-          //   color: const Color(0xFFEBEAE3),
-          //   padding: const EdgeInsets.all(8.0),
-          //   child: const Center(
-          //     child: Text(
-          //       'To-do Section',
-          //       style: TextStyle(
-          //         fontSize: 18,
-          //         fontWeight: FontWeight.bold,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          // // Completed section
-          // Container(
-          //   color: const Color(0xFFEBEAE3),
-          //   padding: const EdgeInsets.all(8.0),
-          //   child: const Center(
-          //     child: Text(
-          //       'Completed Section',
-          //       style: TextStyle(
-          //         fontSize: 18,
-          //         fontWeight: FontWeight.bold,
-          //       ),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
       //floating action button to ass a new goal
