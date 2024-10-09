@@ -36,7 +36,6 @@ class _SignupPageState extends State<SignupPage> {
     // Check if the username is unique
     final username = _usernameController.text;
     final email = _emailController.text;
-    //final password = _passwordController.text;
 
     try {
       // Query Firestore to see if the username already exists
