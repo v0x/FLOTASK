@@ -52,6 +52,9 @@ class _LoginPageState extends State<LoginPage> {
           _success = 2;
           _userEmail = user.email!;
         });
+
+        // Navigate to the main app after successful login
+        Navigator.pushReplacementNamed(context, '/home');
       } else {
         setState(() {
           _success = 3;
