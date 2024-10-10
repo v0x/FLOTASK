@@ -165,14 +165,14 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Container(
-                  padding: EdgeInsets.fromLTRB(15, 300, 0, 0),
+                  padding: EdgeInsets.fromLTRB(15, 290, 0, 0),
                   child: Text(
                     "Login to your account",
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.only(top: 35, left: 20, right: 30),
+                  padding: EdgeInsets.only(top: 10, left: 20, right: 30),
                   child: Column(
                     children: <Widget>[
                       TextField(
@@ -189,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 10),
                       TextField(
                         controller: _usernameController,
                         decoration: InputDecoration(
@@ -204,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         keyboardType: TextInputType.text,
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 10),
                       TextField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
@@ -232,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         keyboardType: TextInputType.text,
                       ),
-                      SizedBox(height: 5.0),
+                      SizedBox(height: 10),
                       Container(
                         alignment: Alignment(1, 0),
                         padding: EdgeInsets.only(top: 15, left: 20),
@@ -266,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 40),
+                      SizedBox(height: 20),
                       Container(
                         height: 40,
                         child: Material(
@@ -291,18 +291,25 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 15),
+                      SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
+                          Text(
+                            'Don\'t have an account?',
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          SizedBox(width: 5),
                           InkWell(
                             onTap: () {
                               Navigator.of(context).pushNamed('/signup');
                             },
                             child: Text(
-                              'Register',
+                              'SIGN UP',
                               style: TextStyle(
-                                color: Colors.blue,
+                                color: Colors.black,
                                 fontFamily: 'Montserrat',
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
@@ -323,55 +330,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Define the ResetPasswordPage for resetting password
-// class ResetPasswordPage extends StatelessWidget {
-//   final String email;
-
-//   ResetPasswordPage({required this.email});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final TextEditingController _newPasswordController =
-//         TextEditingController();
-
-//     return Scaffold(
-//       appBar: AppBar(title: Text('Reset Password')),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           children: <Widget>[
-//             TextField(
-//               controller: _newPasswordController,
-//               decoration: InputDecoration(
-//                 labelText: 'New Password',
-//               ),
-//               obscureText: true,
-//             ),
-//             SizedBox(height: 20),
-//             ElevatedButton(
-//               onPressed: () async {
-//                 try {
-//                   // Update the user's password
-//                   User? user = _auth.currentUser;
-//                   if (user != null) {
-//                     await user.updatePassword(_newPasswordController.text);
-//                     Navigator.of(context).pop();
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       SnackBar(content: Text('Password reset successfully.')),
-//                     );
-//                   }
-//                 } catch (e) {
-//                   print(e.toString());
-//                 }
-//               },
-//               child: Text('Reset Password'),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 class ResetPasswordPage extends StatelessWidget {
   final String email;
 
