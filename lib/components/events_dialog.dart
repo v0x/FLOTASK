@@ -24,8 +24,7 @@ class EventDialog extends StatefulWidget {
 }
 
 class _EventDialogState extends State<EventDialog> {
-  TextEditingController _eventController = TextEditingController();
-  TextEditingController _titleController = TextEditingController();
+  TextEditingController _eventTitleController = TextEditingController();
   TextEditingController _startDateController = TextEditingController();
   TextEditingController _endDateController = TextEditingController();
   TextEditingController _startTimeController = TextEditingController();
@@ -65,13 +64,7 @@ class _EventDialogState extends State<EventDialog> {
             Padding(
               padding: EdgeInsets.all(8),
               child: TextInput(
-                controller: _eventController,
-                label: 'Event',
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: TextInput(controller: _titleController, label: "Title"),
+                  controller: _eventTitleController, label: "Event Title"),
             ),
             Padding(
               padding: EdgeInsets.all(8),
@@ -154,7 +147,7 @@ class _EventDialogState extends State<EventDialog> {
                 // main functionality to add an event to global EventModel class
                 onPressed: () {
                   final event = CalendarEventData(
-                    title: _titleController.text,
+                    title: _eventTitleController.text,
                     date: _startDate,
                     endDate: _endDate,
                     description: _descController.text,

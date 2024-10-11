@@ -27,10 +27,16 @@ class EventProvider extends ChangeNotifier {
         // Create EventModel from Firebase data with null checks
         return EventModel(
           event: CalendarEventData(
-            title: data['event'] as String? ?? 'Untitled Event',
-            date: data['date'] != null
-                ? DateTime.parse(data['date'] as String)
+            title: data['title'] as String? ?? 'Untitled Event',
+            date: data['startDate'] != null
+                ? DateTime.parse(data['startDate'] as String)
                 : DateTime.now(),
+            endDate: data['endDate'] != null
+                ? DateTime.parse(data['endDate'] as String)
+                : null,
+            startTime: data['startTime'] != null
+                ? DateTime.parse(data['startTime'] as String)
+                : null,
             endTime: data['endTime'] != null
                 ? DateTime.parse(data['endTime'] as String)
                 : null,
@@ -62,7 +68,6 @@ class EventProvider extends ChangeNotifier {
     DocumentReference docRef = await _firestore.collection('events').add({
       // 'id': newEvent.event.hashCode,
       'title': newEvent.event.title,
-      'event': newEvent.event.event,
       'description': newEvent.event.description,
       'startDate': newEvent.event.date.toIso8601String(),
       'endDate': newEvent.event.endDate.toIso8601String(),
