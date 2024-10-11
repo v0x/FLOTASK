@@ -31,6 +31,7 @@ class EventModel {
 
   EventModel(
       {required this.event,
+      this.id,
       this.note,
       this.tags,
       this.category = "Home",

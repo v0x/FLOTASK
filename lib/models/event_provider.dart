@@ -26,6 +26,7 @@ class EventProvider extends ChangeNotifier {
 
         // Create EventModel from Firebase data with null checks
         return EventModel(
+          id: doc.id,
           event: CalendarEventData(
             title: data['title'] as String? ?? 'Untitled Event',
             date: data['startDate'] != null
@@ -122,27 +123,6 @@ class EventProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateArchivedStatus(String eventId, bool isArchived) async {
-    final index = _events.indexWhere((element) => element.id == eventId);
-
-    if (index != -1) {
-      _events[index].isArchived = isArchived;
-      notifyListeners();
-
-      // Update archived status in Firebase
-      if (_events[index].id != null) {
-        await FirebaseFirestore.instance
-            .collection('events')
-            .doc(_events[index].id)
-            .update({'isArchived': isArchived});
-      } else {
-        print('Error: Firebase ID is null for event ${_events[index].id}');
-      }
-    } else {
-      print('Error: Event not found with id $eventId');
-    }
-  }
-
   // method to update a streak if the task is completed within a day, then streak of a month and year
   Future<void> updateStreak(String eventId) async {
     final today = DateTime.now();
@@ -192,33 +172,55 @@ class EventProvider extends ChangeNotifier {
   }
 
   // method to archive note
-  Future<void> archiveNote(String eventId) async {
+  // Future<void> archiveNote(String eventId) async {
+  //   final index = _events.indexWhere((element) => element.id == eventId);
+
+  //   if (_events[index].isArchived == false) {
+  //     _events[index].isArchived = true;
+  //   }
+
+  //   await FirebaseFirestore.instance
+  //       .collection('events')
+  //       .doc(_events[index].id)
+  //       .update({'isCompleted': _events[index].isArchived});
+  //   notifyListeners();
+  // }
+
+  // // method to unarchive note
+  // Future<void> unarchiveNote(String eventId) async {
+  //   final index = _events.indexWhere((element) => element.id == eventId);
+
+  //   if (_events[index].isArchived == true) {
+  //     _events[index].isArchived = false;
+  //   }
+  //   notifyListeners();
+
+  //   await FirebaseFirestore.instance
+  //       .collection('events')
+  //       .doc(_events[index].id)
+  //       .update({'isCompleted': _events[index].isArchived});
+  // }
+
+  Future<void> updateArchivedStatus(String eventId, bool isArchived) async {
     final index = _events.indexWhere((element) => element.id == eventId);
 
-    if (_events[index].isArchived == false) {
-      _events[index].isArchived = true;
+    if (index != -1) {
+      _events[index].isArchived = !isArchived;
+
+      // Update archived status in Firebase
+      if (_events[index].id != null) {
+        await FirebaseFirestore.instance
+            .collection('events')
+            .doc(_events[index].id)
+            .update({'isArchived': _events[index].isArchived});
+      } else {
+        print('Error: Firebase ID is null for event ${_events[index].id}');
+      }
+    } else {
+      print('Error: Event not found with id $eventId');
     }
 
-    await FirebaseFirestore.instance
-        .collection('events')
-        .doc(_events[index].id)
-        .update({'isCompleted': _events[index].isArchived});
     notifyListeners();
-  }
-
-  // method to unarchive note
-  Future<void> unarchiveNote(String eventId) async {
-    final index = _events.indexWhere((element) => element.id == eventId);
-
-    if (_events[index].isArchived == true) {
-      _events[index].isArchived = false;
-    }
-    notifyListeners();
-
-    await FirebaseFirestore.instance
-        .collection('events')
-        .doc(_events[index].id)
-        .update({'isCompleted': _events[index].isArchived});
   }
 
   Future<void> toggleComplete(String eventId, bool value) async {
@@ -228,7 +230,7 @@ class EventProvider extends ChangeNotifier {
     // Check if we are completing or undoing a task
     if (value == true) {
       event.isCompleted = true;
-      updateStreak(eventId);
+      updateStreak(event.id!);
     } else {
       // If unchecking, undo the completion and reduce the streak
       event.isCompleted = false;

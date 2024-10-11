@@ -92,9 +92,9 @@ class _TaskPageState extends State<TaskPage> {
                           // An action can be bigger than the others.
                           flex: 2,
                           onPressed: (context) {
-                            context
-                                .read<EventProvider>()
-                                .unarchiveNote(archivedEvent.id!);
+                            // context
+                            //     .read<EventProvider>()
+                            //     .unarchiveNote(archivedEvent.id!);
                             context.read<EventProvider>().updateArchivedStatus(
                                 archivedEvent.id!, archivedEvent.isArchived);
                           },
@@ -163,8 +163,10 @@ class _TaskPageState extends State<TaskPage> {
           SlidableAction(
             flex: 2,
             onPressed: (context) {
-              eventProvider.archiveNote(event.id!);
-              eventProvider.updateArchivedStatus(event.id!, true);
+              // eventProvider.archiveNote(event.id!);
+              context
+                  .read<EventProvider>()
+                  .updateArchivedStatus(event.id!, event.isArchived);
             },
             backgroundColor: Color(0xFF7BC043),
             foregroundColor: Colors.white,
