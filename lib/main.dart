@@ -1,4 +1,3 @@
-
 // FLUTTER CORE PACKAGES
 import 'package:flotask/models/event_model.dart';
 import 'package:flotask/models/event_provider.dart';
@@ -8,6 +7,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
+
+// COMPONENTS
+import 'package:flotask/components/notifications.dart';
 
 // SCREENS
 import 'package:flotask/pages/home.dart';
@@ -19,24 +21,29 @@ import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePa
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Notifications notifications = Notifications();
+  await notifications.initState();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MainApp());
+  runApp(MainApp()); // Launches the app with MainApp as the root widget
 }
 
 class MainApp extends StatefulWidget {
+  const MainApp({super.key});
+
   @override
   _MainAppState createState() => _MainAppState();
 }
 
 class _MainAppState extends State<MainApp> {
-  // Initially set theme mode to light
-  bool isDarkMode = false;
+  bool _isDarkMode = false; // Track whether dark mode is enabled
 
-  void toggleTheme() {
+  // Function to toggle the theme
+  void _toggleTheme() {
     setState(() {
-      isDarkMode = !isDarkMode;
+      _isDarkMode = !_isDarkMode;
     });
   }
 
@@ -48,88 +55,57 @@ class _MainAppState extends State<MainApp> {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: RootLayout(toggleTheme: toggleTheme),
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Color.fromARGB(255, 235, 216, 182),
-          ),
-        ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-        ),
-        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        theme: ThemeData.light(), // Light theme
+        darkTheme: ThemeData.dark(), // Dark theme
+        themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light, // Conditionally apply the theme
+        home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
       ),
     );
   }
 }
 
-class RootLayout extends StatefulWidget {
-  final Function toggleTheme;
+// BottomNav is a stateful widget managing the bottom navigation bar.
+class BottomNav extends StatefulWidget {
+  final VoidCallback toggleTheme; // Function to toggle theme
+  final bool isDarkMode; // Pass the theme state
 
-  RootLayout({required this.toggleTheme});
+  const BottomNav({super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
-  _RootLayoutState createState() => _RootLayoutState();
+  _BottomNavState createState() => _BottomNavState();
 }
 
-class _RootLayoutState extends State<RootLayout> {
-  int currentPageIndex = 0;
+class _BottomNavState extends State<BottomNav> {
+  int currentPageIndex = 0; // Keeps track of the current tab index
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Submit Data to Firestore test again'),
-        leading: IconButton(
-          onPressed: () {
-            widget.toggleTheme(); // Toggle theme when button is pressed
-          },
-          icon: Icon(Theme.of(context).brightness == Brightness.dark
-              ? Icons.light_mode
-              : Icons.dark_mode),
-        ),
-      ),
       body: [
-        HomePage(pageIndex: currentPageIndex),
+        HomePage(toggleTheme: widget.toggleTheme, isDarkMode: widget.isDarkMode), // Home page with theme toggle
         TaskPage(),
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
-        UserProfilePage(), // Add UserProfilePage as a screen
+        UserProfilePage(),
       ][currentPageIndex],
-      bottomNavigationBar: NavigationBar(
-        onDestinationSelected: (int index) {
-          setState(() {
-            currentPageIndex = index;
-          });
-        },
-        selectedIndex: currentPageIndex,
-        indicatorColor: const Color.fromARGB(255, 7, 197, 255),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.task),
-            label: 'Tasks',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_sharp),
-            label: 'Calendar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.timer_outlined),
-            label: 'Pomodoro',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.checklist_rtl_rounded),
-            label: 'Progress',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Profile', // Add profile icon
-          ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentPageIndex,
+        onTap: (index) => setState(() => currentPageIndex = index), 
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.brown.shade700,
+        unselectedItemColor: Colors.brown.shade300,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person, size: 30), label: ''),
         ],
       ),
     );
