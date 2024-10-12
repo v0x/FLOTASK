@@ -17,13 +17,13 @@ class _TaskPageState extends State<TaskPage> {
   // Method to determine the color based on streak type
   Color getStreakColor(int dayStreak, int monthStreak, int yearStreak) {
     if (yearStreak > 0) {
-      return Colors.yellow; // Yearly streak - gold color
+      return Colors.yellow;
     } else if (monthStreak > 0) {
-      return Colors.blue; // Monthly streak - blue color
+      return Colors.blue;
     } else if (dayStreak > 0) {
-      return Colors.green; // Daily streak - green color
+      return Colors.green;
     } else {
-      return Colors.transparent; // No streak - no border
+      return Colors.transparent;
     }
   }
 
@@ -206,7 +206,9 @@ class _TaskPageState extends State<TaskPage> {
             children: [
               Text(
                   '${DateFormat('h:mm a').format(event.event.date)} - ${DateFormat('h:mm a').format(event.event.endTime!)}'),
-              if (event.isRecurring) Text('Streak: ${event.dayStreak!} days'),
+              if (event.isRecurring)
+                Text(
+                    'Streak: ${event.dayStreak!} days, ${event.monthStreak!} months, ${event.yearStreak!} years'),
             ],
           ),
           onTap: () {

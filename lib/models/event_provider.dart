@@ -141,7 +141,7 @@ class EventProvider extends ChangeNotifier {
         event.dayStreak = 0;
       }
 
-      if (event.dayStreak >= daysInMonth(today)) {
+      if (event.dayStreak >= 30) {
         event.monthStreak++;
 
         if (event.monthStreak >= 12) {
@@ -164,12 +164,12 @@ class EventProvider extends ChangeNotifier {
   }
 
 // function to find days in month
-  int daysInMonth(DateTime date) {
-    var beginningNextMonth = (date.month < 12)
-        ? DateTime(date.year, date.month + 1, 1)
-        : DateTime(date.year + 1, 1, 1);
-    return beginningNextMonth.subtract(Duration(days: 1)).day;
-  }
+  // int daysInMonth(DateTime date) {
+  //   var beginningNextMonth = (date.month < 12)
+  //       ? DateTime(date.year, date.month + 1, 1)
+  //       : DateTime(date.year + 1, 1, 1);
+  //   return beginningNextMonth.subtract(Duration(days: 1)).day;
+  // }
 
   // method to archive note
   // Future<void> archiveNote(String eventId) async {
@@ -246,14 +246,14 @@ class EventProvider extends ChangeNotifier {
           event.dayStreak = event.dayStreak > 0 ? event.dayStreak - 1 : 0;
 
           // If day streak reaches below days in month, adjust the month streak
-          if (event.dayStreak < daysInMonth(today) && event.monthStreak > 0) {
-            event.monthStreak--;
+          // if (event.dayStreak < 30 && event.monthStreak > 0) {
+          //   event.monthStreak--;
 
-            // If month streak is undone, adjust the year streak if necessary
-            if (event.monthStreak < 12 && event.yearStreak > 0) {
-              event.yearStreak--;
-            }
-          }
+          //   // If month streak is undone, adjust the year streak if necessary
+          //   if (event.monthStreak < 12 && event.yearStreak > 0) {
+          //     event.yearStreak--;
+          //   }
+          // }
 
           // Set last completed date to null to indicate it's undone
           event.lastCompletedDate = null;
