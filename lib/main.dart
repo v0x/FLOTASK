@@ -55,8 +55,22 @@ class _MainAppState extends State<MainApp> {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.light(), // Light theme
-        darkTheme: ThemeData.dark(), // Dark theme
+        theme: ThemeData.light().copyWith(
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Color(0xFF8D6E63)), // Set color for normal text
+            bodyMedium: TextStyle(color: Color(0xFF8D6E63)), // Set color for smaller text
+            displayLarge: TextStyle(color: Color(0xFF8D6E63)), // Set color for large headings
+            // Customize other text styles as needed
+          ),
+        ),
+        darkTheme: ThemeData.dark().copyWith(
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Colors.white70), // Set color for normal text
+            bodyMedium: TextStyle(color: Colors.white70), // Set color for smaller text
+            displayLarge: TextStyle(color: Colors.white), // Set color for large headings
+            // Customize other text styles as needed
+          ),
+        ),
         themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light, // Conditionally apply the theme
         home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
       ),
