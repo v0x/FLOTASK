@@ -30,31 +30,31 @@ class Menu extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     buildMenuItem(
-                      context: context,
+                      context: context, //DM
                       icon: Icons.share,
                       title: 'Share',
                       onTap: () => print('Share clicked'),
                     ),
                     buildMenuItem(
-                      context: context,
+                      context: context, //DM
                       icon: Icons.book,
                       title: 'Resources',
                       onTap: () => print('Resources clicked'),
                     ),
                     buildMenuItem(
-                      context: context,
+                      context: context, //DM
                       icon: Icons.settings,
                       title: 'Settings',
                       onTap: () => print('Settings clicked'),
                     ),
                     buildMenuItem(
-                      context: context,
+                      context: context, //DM
                       icon: isDarkMode ? Icons.light_mode : Icons.dark_mode, 
                       title: isDarkMode ? 'Light Mode' : 'Dark Mode', // Toggle label
                       onTap: toggleTheme,
                     ),
                     buildMenuItem(
-                      context: context,
+                      context: context, //DM
                       icon: Icons.exit_to_app,
                       title: 'Log Out',
                       onTap: () => print('Log Out clicked'),
@@ -74,7 +74,7 @@ class Menu extends StatelessWidget {
       padding: EdgeInsets.only(left: 15.0),
       child: Text(
         'FloTask',
-        style: TextStyle(fontSize: 24),
+        style: TextStyle(fontSize: 24), //dark mode
       ),
     );
   }
@@ -85,10 +85,10 @@ class Menu extends StatelessWidget {
   return Material(
     color: Colors.transparent,
     child: ListTile(
-      leading: Icon(icon, size: 28, color: Theme.of(context).textTheme.bodyLarge!.color ?? Colors.black), // Apply color from the theme
+      leading: Icon(icon, size: 28, color: Theme.of(context).textTheme.bodyLarge!.color ?? Colors.black), // Apply color from the theme //dark mode
       title: Text(
         title,
-        style: Theme.of(context).textTheme.bodyLarge,
+        style: Theme.of(context).textTheme.bodyLarge, //dark theme
       ),
       onTap: onTap,
     ),

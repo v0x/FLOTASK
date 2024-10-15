@@ -80,6 +80,7 @@ class _MainAppState extends State<MainApp> {
 
 // BottomNav is a stateful widget managing the bottom navigation bar.
 class BottomNav extends StatefulWidget {
+
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
