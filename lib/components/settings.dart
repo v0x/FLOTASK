@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatelessWidget {
   @override
@@ -162,7 +163,36 @@ class _AppPreferencesPageState extends State<AppPreferencesPage> {
   String _selectedLanguage = 'English';
 
   @override
+  void initState() {
+    super.initState();
+    _loadPreferences(); // Load saved preferences when the page is initialized
+  }
+
+  // Load saved preferences for font size and language
+  Future<void> _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedFontSize = prefs.getString('fontSize') ?? 'Medium'; // Default to 'Medium'
+      _selectedLanguage = prefs.getString('language') ?? 'English'; // Default to 'English'
+    });
+  }
+
+  // Save the selected font size
+  Future<void> _saveFontSize(String fontSize) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('fontSize', fontSize);
+  }
+
+  // Save the selected language
+  Future<void> _saveLanguage(String language) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', language);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Apply the selected font size to the text style
+    double fontSize = _getFontSize();
     return Scaffold(
       appBar: AppBar(title: Text('App Preferences')),
       body: ListView(
@@ -171,31 +201,53 @@ class _AppPreferencesPageState extends State<AppPreferencesPage> {
           // Font Size Selection
           ListTile(
             leading: Icon(Icons.text_fields, color: Color(0xFF8D6E63)),
-            title: Text('Font Size'),
+            title: Text('Font Size', style: TextStyle(fontSize: fontSize)),
             trailing: DropdownButton<String>(
               value: _selectedFontSize,
               items: ['Small', 'Medium', 'Large'].map((value) {
                 return DropdownMenuItem(value: value, child: Text(value));
               }).toList(),
-              onChanged: (newValue) => setState(() => _selectedFontSize = newValue!),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedFontSize = newValue!;
+                  _saveFontSize(newValue); // Save the selected font size
+                });
+              },
             ),
           ),
           const Divider(),
           // Language Selection
           ListTile(
             leading: Icon(Icons.language, color: Color(0xFF8D6E63)),
-            title: Text('App Language'),
+            title: Text('App Language', style: TextStyle(fontSize: fontSize)),
             trailing: DropdownButton<String>(
               value: _selectedLanguage,
               items: ['English', 'Spanish', 'French'].map((value) {
                 return DropdownMenuItem(value: value, child: Text(value));
               }).toList(),
-              onChanged: (newValue) => setState(() => _selectedLanguage = newValue!),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedLanguage = newValue!;
+                  _saveLanguage(newValue); // Save the selected language
+                });
+              },
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Method to get font size based on user selection
+  double _getFontSize() {
+    switch (_selectedFontSize) {
+      case 'Small':
+        return 14.0;
+      case 'Large':
+        return 20.0;
+      default:
+        return 16.0;
+    }
   }
 }
 
