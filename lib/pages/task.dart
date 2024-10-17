@@ -34,6 +34,159 @@ class _TaskPageState extends State<TaskPage>
     await taskRef.update({'status': isCompleted ? 'completed' : 'todo'});
   }
 
+  //work review3
+  // Function to edit a task
+  Future<void> _editTask(
+      DocumentReference taskRef, Map<String, dynamic> currentTaskData) async {
+    // Create controllers and variables with current task values
+    final TextEditingController _taskController =
+        TextEditingController(text: currentTaskData['task']);
+    TimeOfDay? _selectedTime = currentTaskData['selectedTime'] != null
+        ? TimeOfDay(
+            hour: int.parse(currentTaskData['selectedTime'].split(":")[0]),
+            minute: int.parse(currentTaskData['selectedTime'].split(":")[1]),
+          )
+        : null;
+    String _selectedOption =
+        _selectedTime != null ? 'Specific time' : 'Any time';
+
+    Future<void> _selectTime(BuildContext context, StateSetter setState) async {
+      final TimeOfDay? picked = await showTimePicker(
+        context: context,
+        initialTime: _selectedTime ??
+            TimeOfDay.now(), // Default to current time if none selected
+      );
+      if (picked != null && picked != _selectedTime) {
+        setState(() {
+          _selectedTime = picked; // Update the selected time
+        });
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Task'),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Task Name Input
+                    TextField(
+                      controller: _taskController,
+                      decoration: const InputDecoration(
+                        labelText: 'Task Name',
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Time Selection
+                    const Text(
+                      'Time',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Time:'),
+                        DropdownButton<String>(
+                          value: _selectedOption,
+                          items: <String>['Any time', 'Specific time']
+                              .map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedOption = newValue!;
+                              if (newValue == 'Specific time') {
+                                _selectTime(context,
+                                    setState); // Open time picker if "Specific time" is selected
+                              } else {
+                                _selectedTime = null; // Reset the selected time
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+
+                    // Display the selected time if "Specific time" is chosen
+                    if (_selectedOption == 'Specific time' &&
+                        _selectedTime != null)
+                      Text('Selected Time: ${_selectedTime!.format(context)}'),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _deleteTask(taskRef);
+                  },
+                  child: const Text('Delete'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Update the task data in Firestore
+                    await taskRef.update({
+                      'task': _taskController.text,
+                      //'repeatInterval': _repeatIntervalNotifier.value,
+                      'selectedTime': _selectedTime != null
+                          ? '${_selectedTime!.hour}:${_selectedTime!.minute}'
+                          : null, // Save selected time if any, otherwise set null
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Save Changes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Function to delete a task
+  Future<void> _deleteTask(DocumentReference taskRef) async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Task'),
+          content: const Text('Are you sure you want to delete this task?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await taskRef.delete();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  //WR3
+
   // Function to build the list of tasks based on the status
   Widget _buildTaskList(String status) {
     return StreamBuilder<QuerySnapshot>(
@@ -72,6 +225,9 @@ class _TaskPageState extends State<TaskPage>
                     final taskRef = task.reference;
                     bool isCompleted = task['status'] == 'completed';
 
+                    // Include the goal name in the task display
+                    String goalName = goal['title']; // Goal title
+
                     return ListTile(
                       leading: Checkbox(
                         value: isCompleted,
@@ -84,7 +240,22 @@ class _TaskPageState extends State<TaskPage>
                       ),
                       title: Text(task['task']),
                       subtitle:
-                          Text('Repeat Interval: ${task['repeatInterval']}'),
+                          //Text('Repeat Interval: ${task['repeatInterval']}'),
+                          Text(
+                              'Goal: $goalName\nTime: ${task['selectedTime'] ?? 'Any time'}'), // Goal name and repeat interval
+                      trailing: Row(
+                        //update UI for edit and delete (WR3)
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              _editTask(
+                                  taskRef, task.data() as Map<String, dynamic>);
+                            },
+                          ),
+                        ],
+                      ),
                     );
                   }).toList(),
                 );
@@ -104,7 +275,7 @@ class _TaskPageState extends State<TaskPage>
       appBar: AppBar(
         title: Center(
           child: Text(
-            "Tasks", //page title
+            "Daily tasks", //page title
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
