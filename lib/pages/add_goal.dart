@@ -75,11 +75,13 @@ class _AddGoalPageState extends State<AddGoalPage> {
       for (final taskData in _tasks) {
         await goalRef.collection('tasks').add({
           'task': taskData['task'], // Task name returned from add_task.dart
-          //'repeatInterval': _repeatIntervalNotifier.value, // From add_task.dart
           'repeatInterval': taskData['repeatInterval'],
-          'startDate':
-              _startDate != null ? Timestamp.fromDate(_startDate!) : null,
-          'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
+          'startDate': taskData['startDate'] != null
+              ? Timestamp.fromDate(taskData['startDate'])
+              : null,
+          'endDate': taskData['endDate'] != null
+              ? Timestamp.fromDate(taskData['endDate'])
+              : null,
           'selectedTime': taskData['selectedTime'], // Specific time
           'status': 'todo', // Set status as "todo" by default
         });
@@ -106,9 +108,24 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
   // Navigate to AddTaskPage to add tasks
   void _navigateToAddTask() async {
+    if (_startDate == null || _endDate == null) {
+      // Ensure that both goal start and end dates are set
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please select start and end dates for the goal.')),
+      );
+      return;
+    }
+
     final newTask = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddTaskPage()),
+      MaterialPageRoute(
+        builder: (context) => AddTaskPage(
+          //WR3()
+          goalStartDate: _startDate!,
+          goalEndDate: _endDate!, //WR3)
+        ),
+      ),
     );
 
     if (newTask != null) {
@@ -118,6 +135,14 @@ class _AddGoalPageState extends State<AddGoalPage> {
       });
     }
   }
+
+  // // Remove a task from the local list of tasks and Firestore (if saved)
+  // Future<void> _removeTask(int taskIndex) async {
+  //   final task = _tasks[taskIndex];
+  //   setState(() {
+  //     _tasks.removeAt(taskIndex); // Remove task from local list
+  //     _isGoalComplete = _titleController.text.isNotEmpty && _tasks.isNotEmpty;
+  //   });
 
   @override
   void dispose() {
@@ -167,7 +192,6 @@ class _AddGoalPageState extends State<AddGoalPage> {
                     }),
                     child: Text(_startDate == null
                         ? 'Select Start Date' //show if no date selected
-                        //: 'Start Date: ${_startDate!.toLocal()}'.split(' ')[0]),//display selected start date
                         : 'Start Date: ${_startDate!.year}-${_startDate!.month}-${_startDate!.day}'),
                   ),
                 ),
@@ -207,12 +231,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
               controller: _noteController,
               decoration: const InputDecoration(
                 labelText: 'Note',
-                //border: OutlineInputBorder(),
               ),
-              //keyboardType: TextInputType.text,
-              keyboardType:
-                  TextInputType.visiblePassword, // Example to avoid emoji
-              //maxLines: 3, // Allows for multi-line input
             ),
             const SizedBox(height: 16.0), //spacing between widgets
             const Text(
@@ -233,8 +252,29 @@ class _AddGoalPageState extends State<AddGoalPage> {
               child: ListView.builder(
                 itemCount: _tasks.length,
                 itemBuilder: (context, index) {
+                  // Format the dates for display //WR3
+                  String startDate = _tasks[index]['startDate'] != null
+                      ? '${_tasks[index]['startDate'].year}-${_tasks[index]['startDate'].month}-${_tasks[index]['startDate'].day}'
+                      : 'No start date';
+                  String endDate = _tasks[index]['endDate'] != null
+                      ? '${_tasks[index]['endDate'].year}-${_tasks[index]['endDate'].month}-${_tasks[index]['endDate'].day}'
+                      : 'No end date'; //WR3
                   return ListTile(
                     title: Text(_tasks[index]['task']),
+                    subtitle: Text(
+                        'Repeat Every: ${_tasks[index]['repeatInterval']} days\nDate: $startDate - $endDate'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete), // Delete icon
+                      color: Colors.black, // You can customize the icon color
+                      onPressed: () {
+                        setState(() {
+                          _tasks
+                              .removeAt(index); // Remove the task from the list
+                          _checkIfGoalIsComplete();
+                        } // Recheck if the goal is complete after removal
+                            );
+                      },
+                    ),
                   );
                 },
               ),

@@ -189,6 +189,8 @@ class _TaskPageState extends State<TaskPage>
 
   // Function to build the list of tasks based on the status
   Widget _buildTaskList(String status) {
+    final currentDate = DateTime.now(); //get the current date
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('goals')
@@ -228,6 +230,39 @@ class _TaskPageState extends State<TaskPage>
                     // Include the goal name in the task display
                     String goalName = goal['title']; // Goal title
 
+                    DateTime? startDate = (task['startDate'] != null)
+                        ? (task['startDate'] as Timestamp).toDate()
+                        : null;
+                    DateTime? endDate = (task['endDate'] != null)
+                        ? (task['endDate'] as Timestamp).toDate()
+                        : null;
+                    int repeatInterval = task['repeatInterval'];
+                    String? selectedTime = task['selectedTime'];
+
+                    // Filter tasks based on the current date and recurring dates
+                    if (startDate != null && endDate != null) {
+                      List<DateTime> recurringDates = [];
+
+                      // Generate recurring dates between start and end date based on the repeat interval
+                      for (DateTime date = startDate;
+                          date.isBefore(endDate) ||
+                              date.isAtSameMomentAs(endDate);
+                          date = date.add(Duration(days: repeatInterval))) {
+                        recurringDates.add(date);
+                      }
+
+                      // Check if the current date matches any of the recurring dates
+                      bool isTaskForToday = recurringDates.any((date) =>
+                          date.year == currentDate.year &&
+                          date.month == currentDate.month &&
+                          date.day == currentDate.day);
+
+                      // If the task is not scheduled for today, skip it
+                      if (!isTaskForToday) {
+                        return const SizedBox.shrink();
+                      }
+                    }
+
                     return ListTile(
                       leading: Checkbox(
                         value: isCompleted,
@@ -263,6 +298,11 @@ class _TaskPageState extends State<TaskPage>
             ),
           );
         }
+        // If no tasks for today, show a simple message
+        if (taskWidgets.isEmpty) {
+          return Center(child: const Text('No tasks for today.'));
+        }
+
         return ListView(children: taskWidgets);
       },
     );

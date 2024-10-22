@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AddTaskPage extends StatefulWidget {
+  final DateTime goalStartDate; //WR3(
+  final DateTime goalEndDate;
+
+  AddTaskPage({required this.goalStartDate, required this.goalEndDate}); //WR3)
+
   @override
   _AddTaskPageState createState() => _AddTaskPageState();
 }
@@ -22,8 +27,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
       context: context,
       initialDate:
           initialDate ?? DateTime.now(), // Set initial date to current if null
-      firstDate: DateTime(2000), // Set first selectable date
-      lastDate: DateTime(2101), // Set last selectable date
+      firstDate: widget
+          .goalStartDate, // Ensure task start date is not earlier than goal start date //WR3(
+      lastDate: widget
+          .goalEndDate, // Ensure task end date is not later than goal end date //WR3)
     );
     if (pickedDate != null && pickedDate != initialDate) {
       onDateSelected(pickedDate); // Update the selected date
