@@ -23,18 +23,21 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   Timer? _timer;
   late Duration _timeSpecified;
 
+//initializes timer
   @override
   void initState() {
     _initialize();
     super.initState();
   }
 
+//deletes component
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
   }
 
+  //updates component's parameters to that of the new selected task
   @override
   void didUpdateWidget(covariant PomodoroTimer prev) {
     super.didUpdateWidget(prev);
@@ -46,6 +49,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     }
   }
 
+  //use this to make updates to initializing the timer.
   void _initialize(){
     _workSession = false;
     _timer?.cancel();
@@ -56,6 +60,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     _workTimer();
   }
 
+  //progressbar value
   double _currProgress(){
     int total = _workSession ? widget.workTime*60 : widget.breakTime*60;
     return (total-_timeSpecified.inSeconds)/total;
@@ -69,6 +74,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     return '${(_timeSpecified.inSeconds%60).toString().padLeft(2, '0')}';
   }
 
+  //timers specific to work and break times
   void _workTimer() {
     setState(() {
       _breakTime = false;
@@ -83,6 +89,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     _timeSpecified = Duration(minutes: widget.breakTime);
   }
 
+  //methods for timer buttons
   void start(){
     setState(() {
       _isRunning = true;
