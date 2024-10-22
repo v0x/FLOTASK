@@ -176,7 +176,8 @@ class _TaskPageState extends State<TaskPage>
             TextButton(
               onPressed: () async {
                 await taskRef.delete();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Close the confirmation dialog
+                Navigator.of(context).pop(); // Close the edit dialog
               },
               child: const Text('Delete'),
             ),
