@@ -12,6 +12,8 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/components/notifications.dart';
 
 // SCREENS
+import 'package:flotask/pages/login.dart';
+import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
@@ -54,37 +56,52 @@ class _MainAppState extends State<MainApp> {
         ChangeNotifierProvider(create: (context) => EventProvider()),
       ],
       child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.light().copyWith(
-          textTheme: TextTheme(
-            bodyLarge: TextStyle(color: Color(0xFF8D6E63)), // Set color for normal text
-            bodyMedium: TextStyle(color: Color(0xFF8D6E63)), // Set color for smaller text
-            displayLarge: TextStyle(color: Color(0xFF8D6E63)), // Set color for large headings
-            // Customize other text styles as needed
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light().copyWith(
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for large headings
+              // Customize other text styles as needed
+            ),
           ),
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          textTheme: TextTheme(
-            bodyLarge: TextStyle(color: Colors.white70), // Set color for normal text
-            bodyMedium: TextStyle(color: Colors.white70), // Set color for smaller text
-            displayLarge: TextStyle(color: Colors.white), // Set color for large headings
-            // Customize other text styles as needed
+          darkTheme: ThemeData.dark().copyWith(
+            textTheme: TextTheme(
+              bodyLarge:
+                  TextStyle(color: Colors.white70), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Colors.white70), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Colors.white), // Set color for large headings
+              // Customize other text styles as needed
+            ),
           ),
-        ),
-        themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light, // Conditionally apply the theme
-        home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
-      ),
+          themeMode: _isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light, // Conditionally apply the theme
+          //home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+
+          //set the initial page to LoginPage
+          home: LoginPage(),
+          routes: {
+            '/home': (context) =>
+                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+            '/signup': (context) => SignupPage(), //signup page
+          }),
     );
   }
 }
 
 // BottomNav is a stateful widget managing the bottom navigation bar.
 class BottomNav extends StatefulWidget {
-
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
-  const BottomNav({super.key, required this.toggleTheme, required this.isDarkMode});
+  const BottomNav(
+      {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
   _BottomNavState createState() => _BottomNavState();
@@ -97,17 +114,18 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: [
-        HomePage(toggleTheme: widget.toggleTheme, isDarkMode: widget.isDarkMode), // Home page with theme toggle
+        HomePage(
+            toggleTheme: widget.toggleTheme,
+            isDarkMode: widget.isDarkMode), // Home page with theme toggle
         TaskPage(),
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
         UserProfilePage(),
       ][currentPageIndex],
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
-        onTap: (index) => setState(() => currentPageIndex = index), 
+        onTap: (index) => setState(() => currentPageIndex = index),
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.brown.shade700,
@@ -117,10 +135,13 @@ class _BottomNavState extends State<BottomNav> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 30), label: ''),
         ],
       ),
     );
