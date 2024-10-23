@@ -16,9 +16,12 @@ import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 
+// TEST voice memos
+import 'package:flotask/components/voice_memos.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform); 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MainApp()); // Launches the app with MainApp as the root widget
 }
 
@@ -35,14 +38,16 @@ class MainApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false, // Hides the debug banner
         theme: ThemeData(
-          primaryColor: const Color(0xFFF8F8F8), // Set primary color to pastel white
-          scaffoldBackgroundColor: const Color(0xFFF8F8F8), // Apply same pastel white to the background
+          primaryColor:
+              const Color(0xFFF8F8F8), // Set primary color to pastel white
+          scaffoldBackgroundColor: const Color(
+              0xFFF8F8F8), // Apply same pastel white to the background
           visualDensity: VisualDensity.adaptivePlatformDensity,
           colorScheme: ColorScheme.fromSwatch().copyWith(
             primary: const Color(0xFFF8F8F8), // Consistently use pastel white
           ),
         ),
-        home: const BottomNav(), // Main navigation using BottomNav widget
+        home: const VoiceMemo(), // Main navigation using BottomNav widget
       ),
     );
   }
@@ -64,21 +69,23 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: [
-        HomePage(),    // Index 0: Home Page
-        TaskPage(),    // Index 1: Task Page
-        CalendarPage(),// Index 2: Calendar Page
-        PomodoroPage(),// Index 3: Pomodoro Page
-        ProgressPage(),// Index 4: Progress Page
-        UserProfilePage(),// Index 5: User Profile Page
+        HomePage(), // Index 0: Home Page
+        TaskPage(), // Index 1: Task Page
+        CalendarPage(), // Index 2: Calendar Page
+        PomodoroPage(), // Index 3: Pomodoro Page
+        ProgressPage(), // Index 4: Progress Page
+        UserProfilePage(), // Index 5: User Profile Page
       ][currentPageIndex],
 
       // Defines the bottom navigation bar with icons and highlights based on the selected tab.
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
-        onTap: (index) => setState(() => currentPageIndex = index), // Update selected page
-        backgroundColor: Colors.white, 
+        onTap: (index) =>
+            setState(() => currentPageIndex = index), // Update selected page
+        backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.brown.shade700, // Highlight color for the selected tab
+        selectedItemColor:
+            Colors.brown.shade700, // Highlight color for the selected tab
         unselectedItemColor: Colors.brown.shade300, // Inactive tab color
         showSelectedLabels: false, // Hides labels for a cleaner look
         showUnselectedLabels: false,
