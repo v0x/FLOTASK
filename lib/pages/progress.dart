@@ -5,11 +5,11 @@ import 'package:intl/intl.dart';
 class ProgressPage extends StatelessWidget {
   const ProgressPage({super.key});
 
-  //Function to formate the date
+  // Function to format the date
   String _formatDate(Timestamp? timestamp) {
     if (timestamp == null) return 'No date';
     DateTime date = timestamp.toDate();
-    return DateFormat('yyyy-MM-dd').format(date); //format the date
+    return DateFormat('yyyy-MM-dd').format(date); // Format the date
   }
 
   // Function to build the list of tasks for a goal
@@ -26,17 +26,43 @@ class ProgressPage extends StatelessWidget {
           return const Text('No tasks added yet.');
         }
 
+        // Calculate task progress
+        int completedTasks =
+            tasks.where((task) => task['status'] == 'completed').length;
+        double taskProgress = completedTasks / tasks.length;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: tasks.map((task) {
-            String taskStartDate = _formatDate(task['startDate']);
-            String taskEndDate = _formatDate(task['endDate']);
-            return ListTile(
-              title: Text(task['task']),
-              subtitle: Text(
-                  'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate'),
-            );
-          }).toList(),
+          children: [
+            LinearProgressIndicator(value: taskProgress), // Progress bar
+            Text(
+                '${(taskProgress * 100).toStringAsFixed(0)}% completed'), // Percentage text
+            const SizedBox(height: 10),
+            ...tasks.map((task) {
+              String taskStartDate = _formatDate(task['startDate']);
+              String taskEndDate = _formatDate(task['endDate']);
+              bool isCompleted = task['status'] == 'completed';
+
+              return ListTile(
+                title: Text(
+                  task['task'],
+                  style: TextStyle(
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                subtitle: Text(
+                  'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
+                ),
+                trailing: Checkbox(
+                  value: isCompleted,
+                  onChanged: (bool? newValue) {
+                    task.reference.update(
+                        {'status': newValue == true ? 'completed' : 'todo'});
+                  },
+                ),
+              );
+            }).toList(),
+          ],
         );
       },
     );
@@ -46,7 +72,7 @@ class ProgressPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Progress Page'),
+        title: const Text('Progress Tracker'),
         backgroundColor: const Color(0xFFEBEAE3),
       ),
       body: StreamBuilder<QuerySnapshot>(
