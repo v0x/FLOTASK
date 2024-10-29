@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flotask/utils/firestore_helpers.dart';
+//import 'package:flotask/utils/firestore_helpers.dart';
 
 class ProgressPage extends StatelessWidget {
   const ProgressPage({super.key});
@@ -49,25 +49,14 @@ class ProgressPage extends StatelessWidget {
                 '${(taskProgress * 100).toStringAsFixed(0)}% of task completed'),
             const SizedBox(height: 10),
             ...sortedRecurrences.map((recurrence) {
-              bool isCompleted = recurrence['status'] == 'completed';
+              //bool isCompleted = recurrence['status'] == 'completed';
+              String status = recurrence['status'];
               String date =
                   _formatDate((recurrence['date'] as Timestamp).toDate());
 
               return ListTile(
                 title: Text('Date: $date'),
-                trailing: Checkbox(
-                  value: isCompleted,
-                  onChanged: (bool? newValue) {
-                    if (newValue != null) {
-                      updateRecurrenceStatus(
-                        recurrenceRef: recurrence.reference,
-                        taskRef: taskRef,
-                        goalRef: goalRef,
-                        isCompleted: newValue,
-                      );
-                    }
-                  },
-                ),
+                subtitle: status == 'completed' ? Text('$status') : null,
               );
             }).toList(),
           ],
@@ -165,7 +154,8 @@ class ProgressPage extends StatelessWidget {
                   title: Text(goal['title']),
                   subtitle: Text(
                     'Category: ${goal['category'] ?? 'No category'}\n'
-                    'Date: $goalStartDate to $goalEndDate',
+                    'Date: $goalStartDate to $goalEndDate\n'
+                    'Note: ${goal['note'] ?? 'No note'}',
                   ),
                   children: [
                     Padding(

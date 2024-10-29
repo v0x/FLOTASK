@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_task.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'task.dart';
+import '../dailytask.dart';
 
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'add_goal.dart';
+import 'goaltaskmanage/add_goal.dart';
 import 'package:flotask/utils/firestore_helpers.dart';
 
 //stateful widget for the Taskpage
