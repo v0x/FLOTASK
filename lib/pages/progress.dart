@@ -1,21 +1,87 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flotask/utils/firestore_helpers.dart';
 
 class ProgressPage extends StatelessWidget {
   const ProgressPage({super.key});
 
   // Function to format the date
-  String _formatDate(Timestamp? timestamp) {
-    if (timestamp == null) return 'No date';
-    DateTime date = timestamp.toDate();
-    return DateFormat('yyyy-MM-dd').format(date); // Format the date
+  String _formatDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 
-  // Function to build the list of tasks for a goal
-  Widget _buildTaskList(DocumentSnapshot goal) {
+  // Function to build the list of recurring dates for a task
+  Widget _buildRecurringDateList(
+      DocumentReference taskRef, DocumentReference goalRef) {
     return StreamBuilder<QuerySnapshot>(
-      stream: goal.reference.collection('tasks').snapshots(),
+      stream: taskRef.collection('recurrences').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final recurrences = snapshot.data!.docs;
+        if (recurrences.isEmpty) {
+          return const Text('No recurring dates yet.');
+        }
+
+        //sort the recurrencies by ascending order of date
+        final sortedRecurrences = recurrences
+          ..sort((a, b) {
+            final dateA = (a['date'] as Timestamp).toDate();
+            final dateB = (b['date'] as Timestamp).toDate();
+            return dateA.compareTo(dateB);
+          });
+
+        int completedCount = sortedRecurrences
+            .where((doc) => doc['status'] == 'completed')
+            .length;
+        double taskProgress = sortedRecurrences.isNotEmpty
+            ? completedCount / sortedRecurrences.length
+            : 0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(value: taskProgress),
+            Text(
+                '${(taskProgress * 100).toStringAsFixed(0)}% of task completed'),
+            const SizedBox(height: 10),
+            ...sortedRecurrences.map((recurrence) {
+              bool isCompleted = recurrence['status'] == 'completed';
+              String date =
+                  _formatDate((recurrence['date'] as Timestamp).toDate());
+
+              return ListTile(
+                title: Text('Date: $date'),
+                trailing: Checkbox(
+                  value: isCompleted,
+                  onChanged: (bool? newValue) {
+                    if (newValue != null) {
+                      updateRecurrenceStatus(
+                        recurrenceRef: recurrence.reference,
+                        taskRef: taskRef,
+                        goalRef: goalRef,
+                        isCompleted: newValue,
+                      );
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to build the list of tasks for a goal and calculate goal progress
+  Widget _buildTaskList(DocumentSnapshot goal) {
+    final goalRef = goal.reference;
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: goalRef.collection('tasks').snapshots(),
       builder: (context, taskSnapshot) {
         if (!taskSnapshot.hasData) {
           return const CircularProgressIndicator();
@@ -26,40 +92,36 @@ class ProgressPage extends StatelessWidget {
           return const Text('No tasks added yet.');
         }
 
-        // Calculate task progress
-        int completedTasks =
-            tasks.where((task) => task['status'] == 'completed').length;
-        double taskProgress = completedTasks / tasks.length;
+        int totalTaskCompletedRecurrences =
+            goal['totalTaskCompletedRecurrences'] ?? 0;
+        int totalTaskRecurrences =
+            goal['totalTaskRecurrences'] ?? 0; // Prevent division by zero
+        double goalProgress = totalTaskRecurrences > 0
+            ? totalTaskCompletedRecurrences / totalTaskRecurrences
+            : 0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            LinearProgressIndicator(value: taskProgress), // Progress bar
+            LinearProgressIndicator(value: goalProgress),
             Text(
-                '${(taskProgress * 100).toStringAsFixed(0)}% completed'), // Percentage text
+                '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
             const SizedBox(height: 10),
             ...tasks.map((task) {
-              String taskStartDate = _formatDate(task['startDate']);
-              String taskEndDate = _formatDate(task['endDate']);
-              bool isCompleted = task['status'] == 'completed';
+              String taskStartDate =
+                  _formatDate((task['startDate'] as Timestamp).toDate());
+              String taskEndDate =
+                  _formatDate((task['endDate'] as Timestamp).toDate());
 
-              return ListTile(
-                title: Text(
-                  task['task'],
-                  style: TextStyle(
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+              return ExpansionTile(
+                title: Text(task['task']),
+                subtitle: Text('Date: $taskStartDate to $taskEndDate'),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildRecurringDateList(task.reference, goalRef),
                   ),
-                ),
-                subtitle: Text(
-                  'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
-                ),
-                trailing: Checkbox(
-                  value: isCompleted,
-                  onChanged: (bool? newValue) {
-                    task.reference.update(
-                        {'status': newValue == true ? 'completed' : 'todo'});
-                  },
-                ),
+                ],
               );
             }).toList(),
           ],
@@ -92,10 +154,10 @@ class ProgressPage extends StatelessWidget {
             itemCount: goals.length,
             itemBuilder: (context, index) {
               final goal = goals[index];
-
-              // Format the start and end dates for the goal
-              String goalStartDate = _formatDate(goal['startDate']);
-              String goalEndDate = _formatDate(goal['endDate']);
+              String goalStartDate =
+                  _formatDate((goal['startDate'] as Timestamp).toDate());
+              String goalEndDate =
+                  _formatDate((goal['endDate'] as Timestamp).toDate());
 
               return Card(
                 margin: const EdgeInsets.all(8.0),

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'add_task.dart'; // Import add_task.dart
+import 'add_task.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'task.dart';
 
-// Stateful widget for AddGoalPage
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});
 
@@ -11,13 +10,11 @@ class AddGoalPage extends StatefulWidget {
   _AddGoalPageState createState() => _AddGoalPageState();
 }
 
-// State class for AddGoalPage
 class _AddGoalPageState extends State<AddGoalPage> {
   final TextEditingController _titleController =
       TextEditingController(); // Controller for goal title
   final List<Map<String, dynamic>> _tasks = []; // Change type to store map data
 
-  //final List<String> _tasks = []; // Local list to store tasks temporarily
   bool _isGoalComplete = false;
   final TextEditingController _categoryController =
       TextEditingController(); //controller for Category
@@ -27,65 +24,90 @@ class _AddGoalPageState extends State<AddGoalPage> {
   DateTime? _startDate; //variable to store start date
   DateTime? _endDate; //variable to store end date
 
-  // Method to check if both goal name and tasks are provided
   void _checkIfGoalIsComplete() {
     setState(() {
       _isGoalComplete = _titleController.text.isNotEmpty && _tasks.isNotEmpty;
     });
   }
 
-  //function to show date picker and allow user to select a date
   Future<void> _selectDate(BuildContext context, DateTime? initialDate,
       ValueChanged<DateTime?> onDateSelected) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate:
-          initialDate ?? DateTime.now(), //set initial date to current if null
-      firstDate: DateTime(2000), //set first selectable date
-      lastDate: DateTime(2101), //set last selectable date
+      initialDate: initialDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
     );
-    //if user selected a date and it is different from the current date
     if (pickedDate != null && pickedDate != initialDate) {
-      onDateSelected(pickedDate); //update the selected date
+      onDateSelected(pickedDate);
     }
   }
 
-  // Save goal and tasks to Firestore
+  List<DateTime> _generateRecurringDates(
+      DateTime startDate, DateTime endDate, int interval) {
+    List<DateTime> recurringDates = [];
+    for (DateTime date = startDate;
+        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+        date = date.add(Duration(days: interval))) {
+      recurringDates.add(date);
+    }
+    return recurringDates;
+  }
+
   Future<void> _saveGoal() async {
     final goalTitle = _titleController.text;
 
     if (goalTitle.isNotEmpty && _tasks.isNotEmpty) {
-      // Create a reference for the new goal
       final goalRef = FirebaseFirestore.instance.collection('goals').doc();
 
-      // Save goal to Firestore
+      int totalTaskRecurrences = 0; //store the sum of all task recurrences
+
       await goalRef.set({
         'title': goalTitle,
-        'category': _categoryController.text, // Goal category
-        'note': _noteController.text, // Goal note
-        'startDate': _startDate != null
-            ? Timestamp.fromDate(_startDate!)
-            : null, // Start date
-        'endDate':
-            _endDate != null ? Timestamp.fromDate(_endDate!) : null, // End date
+        'category': _categoryController.text,
+        'note': _noteController.text,
+        'startDate':
+            _startDate != null ? Timestamp.fromDate(_startDate!) : null,
+        'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
         'createdAt': FieldValue.serverTimestamp(),
+        'totalTaskCompletedRecurrences': 0,
       });
 
-      // Save tasks to Firestore under the goal
       for (final taskData in _tasks) {
-        await goalRef.collection('tasks').add({
-          'task': taskData['task'], // Task name returned from add_task.dart
-          'repeatInterval': taskData['repeatInterval'],
-          'startDate': taskData['startDate'] != null
-              ? Timestamp.fromDate(taskData['startDate'])
-              : null,
-          'endDate': taskData['endDate'] != null
-              ? Timestamp.fromDate(taskData['endDate'])
-              : null,
-          'selectedTime': taskData['selectedTime'], // Specific time
-          'status': 'todo', // Set status as "todo" by default
-        });
+        if (taskData['startDate'] != null &&
+            taskData['endDate'] != null &&
+            taskData['repeatInterval'] != null) {
+          List<DateTime> recurrences = _generateRecurringDates(
+            taskData['startDate'],
+            taskData['endDate'],
+            taskData['repeatInterval'],
+          );
+
+          final taskRef = await goalRef.collection('tasks').add({
+            'task': taskData['task'],
+            'repeatInterval': taskData['repeatInterval'],
+            'startDate': Timestamp.fromDate(taskData['startDate']),
+            'endDate': Timestamp.fromDate(taskData['endDate']),
+            'selectedTime': taskData['selectedTime'],
+            'status': 'todo',
+            'totalRecurrences': recurrences.length,
+            'totalCompletedRecurrences': 0,
+          });
+          totalTaskRecurrences += recurrences.length;
+
+          for (DateTime date in recurrences) {
+            await taskRef.collection('recurrences').add({
+              'date': Timestamp.fromDate(date),
+              'status': 'todo',
+            });
+          }
+        }
       }
+
+      // Update the goal with the totalTaskRecurrences after all tasks are added
+      await goalRef.update({
+        'totalTaskRecurrences': totalTaskRecurrences,
+      });
 
       // Clear data after saving
       _titleController.clear();
@@ -98,7 +120,6 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
       print('Goal and tasks saved to Firestore');
 
-      // Navigate to the TaskPage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const TaskPage()),
@@ -106,10 +127,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
     }
   }
 
-  // Navigate to AddTaskPage to add tasks
   void _navigateToAddTask() async {
     if (_startDate == null || _endDate == null) {
-      // Ensure that both goal start and end dates are set
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Please select start and end dates for the goal.')),
@@ -121,28 +140,19 @@ class _AddGoalPageState extends State<AddGoalPage> {
       context,
       MaterialPageRoute(
         builder: (context) => AddTaskPage(
-          //WR3()
           goalStartDate: _startDate!,
-          goalEndDate: _endDate!, //WR3)
+          goalEndDate: _endDate!,
         ),
       ),
     );
 
     if (newTask != null) {
       setState(() {
-        _tasks.add(newTask); // Add the new task to the local list
-        _checkIfGoalIsComplete(); // Check if the goal is complete after adding the task
+        _tasks.add(newTask);
+        _checkIfGoalIsComplete();
       });
     }
   }
-
-  // // Remove a task from the local list of tasks and Firestore (if saved)
-  // Future<void> _removeTask(int taskIndex) async {
-  //   final task = _tasks[taskIndex];
-  //   setState(() {
-  //     _tasks.removeAt(taskIndex); // Remove task from local list
-  //     _isGoalComplete = _titleController.text.isNotEmpty && _tasks.isNotEmpty;
-  //   });
 
   @override
   void dispose() {
@@ -161,9 +171,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
-            onPressed: _isGoalComplete
-                ? _saveGoal
-                : null, // Save goal when check icon is pressed
+            onPressed: _isGoalComplete ? _saveGoal : null,
           ),
         ],
       ),
@@ -174,30 +182,25 @@ class _AddGoalPageState extends State<AddGoalPage> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Goal Title',
-              ),
+              decoration: const InputDecoration(labelText: 'Goal Title'),
               onChanged: (value) => _checkIfGoalIsComplete(),
             ),
             const SizedBox(height: 16.0),
             Row(
               children: [
-                //button to select start date
                 Expanded(
                   child: TextButton(
                     onPressed: () => _selectDate(context, _startDate, (date) {
                       setState(() {
-                        _startDate = date; //set selected start date
+                        _startDate = date;
                       });
                     }),
                     child: Text(_startDate == null
-                        ? 'Select Start Date' //show if no date selected
+                        ? 'Select Start Date'
                         : 'Start Date: ${_startDate!.year}-${_startDate!.month}-${_startDate!.day}'),
                   ),
                 ),
-                const SizedBox(
-                    width: 16.0), //space between start and end date buttons
-                //button to select end date
+                const SizedBox(width: 16.0),
                 Expanded(
                   child: TextButton(
                     onPressed: () => _selectDate(context, _endDate, (date) {
@@ -206,45 +209,31 @@ class _AddGoalPageState extends State<AddGoalPage> {
                       });
                     }),
                     child: Text(_endDate == null
-                        ? 'Select End Date' //show if no date selected
-                        //: 'End Date: ${_endDate!.toLocal()}'.split(' ')[0]),
-                        : 'End Date: ${_endDate!.year}-${_endDate!.month}-${_endDate!.day}'), // Properly formatted date
+                        ? 'Select End Date'
+                        : 'End Date: ${_endDate!.year}-${_endDate!.month}-${_endDate!.day}'),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8.0),
-            // Category text field
             TextField(
-              controller: _categoryController, //controller for the category
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                //border: OutlineInputBorder(),
-              ),
-              keyboardType:
-                  TextInputType.visiblePassword, // Example to avoid emoji
+              controller: _categoryController,
+              decoration: const InputDecoration(labelText: 'Category'),
+              keyboardType: TextInputType.visiblePassword,
             ),
-
             const SizedBox(height: 8.0),
-            // Note text field
             TextField(
               controller: _noteController,
-              decoration: const InputDecoration(
-                labelText: 'Note',
-              ),
+              decoration: const InputDecoration(labelText: 'Note'),
             ),
-            const SizedBox(height: 16.0), //spacing between widgets
+            const SizedBox(height: 16.0),
             const Text(
-              'Tasks for this Goal', //section heading for tasks
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              'Tasks for this Goal',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
-              onPressed:
-                  _navigateToAddTask, // Navigate to AddTaskPage to add tasks
+              onPressed: _navigateToAddTask,
               child: const Text('Add Task'),
             ),
             const SizedBox(height: 16.0),
@@ -252,27 +241,24 @@ class _AddGoalPageState extends State<AddGoalPage> {
               child: ListView.builder(
                 itemCount: _tasks.length,
                 itemBuilder: (context, index) {
-                  // Format the dates for display //WR3
                   String startDate = _tasks[index]['startDate'] != null
                       ? '${_tasks[index]['startDate'].year}-${_tasks[index]['startDate'].month}-${_tasks[index]['startDate'].day}'
                       : 'No start date';
                   String endDate = _tasks[index]['endDate'] != null
                       ? '${_tasks[index]['endDate'].year}-${_tasks[index]['endDate'].month}-${_tasks[index]['endDate'].day}'
-                      : 'No end date'; //WR3
+                      : 'No end date';
                   return ListTile(
                     title: Text(_tasks[index]['task']),
                     subtitle: Text(
                         'Repeat Every: ${_tasks[index]['repeatInterval']} days\nDate: $startDate - $endDate'),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete), // Delete icon
-                      color: Colors.black, // You can customize the icon color
+                      icon: const Icon(Icons.delete),
+                      color: Colors.black,
                       onPressed: () {
                         setState(() {
-                          _tasks
-                              .removeAt(index); // Remove the task from the list
+                          _tasks.removeAt(index);
                           _checkIfGoalIsComplete();
-                        } // Recheck if the goal is complete after removal
-                            );
+                        });
                       },
                     ),
                   );
