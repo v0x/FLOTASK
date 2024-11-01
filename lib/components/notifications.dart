@@ -4,6 +4,8 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+//This edit is made for demo purposes, ignore.
+
 /*Notification Type Selected: Local
  *Why?: It can run in background even if the app itself is closed
  *      It relies on the Android OS, so locally dependent, can still run even if servers are down
