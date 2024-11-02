@@ -10,9 +10,10 @@ class VoiceMemo extends StatefulWidget {
 }
 
 class _VoiceMemoState extends State<VoiceMemo> {
-  SpeechToText _speechToText = SpeechToText();
+  final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
-  String _lastWords = '';
+  bool _showTextField = false;
+  TextEditingController speech = TextEditingController();
 
   @override
   void initState() {
@@ -25,9 +26,14 @@ class _VoiceMemoState extends State<VoiceMemo> {
     setState(() {});
   }
 
-  /// Each time to start a speech recognition session
   void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
+    setState(() => _showTextField = true);
+    speech.text = speech.text.trim();
+    await _speechToText.listen(
+      onResult: _onSpeechResult,
+      listenFor: Duration(seconds: 30),
+      pauseFor: Duration(seconds: 3),
+    );
     setState(() {});
   }
 
@@ -37,50 +43,57 @@ class _VoiceMemoState extends State<VoiceMemo> {
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    setState(() {
-      _lastWords = result.recognizedWords;
-    });
+    if (result.finalResult) {
+      setState(() {
+        speech.text = speech.text.trim() + ' ' + result.recognizedWords;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Speech Demo'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Recognized words:',
-                style: TextStyle(fontSize: 20.0),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  _speechToText.isListening
-                      ? '$_lastWords'
-                      : _speechEnabled
-                          ? 'Tap the microphone to start listening...'
-                          : 'Speech not available',
+    return Material(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            if (_showTextField) ...[
+              Expanded(
+                child: TextField(
+                  controller: speech,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: 'Speak or type your note...',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => speech.clear()),
+                    ),
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
+            ],
+            if (speech.text.isNotEmpty) ...[
+              IconButton(
+                onPressed: () =>
+                    setState(() => _showTextField = !_showTextField),
+                tooltip: _showTextField ? 'Hide text' : 'Edit text',
+                icon: Icon(_showTextField ? Icons.edit_off : Icons.edit),
+              ),
+            ],
+            IconButton(
+              onPressed: _speechEnabled
+                  ? (_speechToText.isNotListening
+                      ? _startListening
+                      : _stopListening)
+                  : null,
+              tooltip: 'Record voice',
+              icon: Icon(
+                  _speechToText.isNotListening ? Icons.mic_off : Icons.mic),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed:
-
-            // If not yet listening for speech start, otherwise stop
-            _speechToText.isNotListening ? _startListening : _stopListening,
-        tooltip: 'Listen',
-        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),
       ),
     );
   }

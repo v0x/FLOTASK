@@ -10,6 +10,9 @@ class EventModel {
   String? category;
   bool isCompleted;
   int streak;
+  String? voiceMemos;
+
+  // Add voice memos
 
   EventModel({
     required this.event,
