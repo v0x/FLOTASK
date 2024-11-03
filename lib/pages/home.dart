@@ -15,14 +15,12 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: Menu(), // Side menu using the Menu widget
-      // Set AppBar to be transparent and remove elevation for a seamless look
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 0,
+        elevation: 0, // Flat, clean AppBar with no shadow
         leading: IconButton(
-          icon: Icon(Icons.menu, color: Colors.black.withOpacity(0.9), size: 32),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32), 
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(), // Opens the Drawer via GlobalKey
         ),
         actions: [
           IconButton(
@@ -31,25 +29,14 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      extendBodyBehindAppBar: true, // Extends the body to go behind the AppBar
       body: Stack(
         children: [
-          // Animated sky background filling the entire screen
-          Positioned.fill(
-            child: RiveAnimation.asset(
-              'lib/assets/cloud.riv',
-              fit: BoxFit.cover,
-            ),
+          // Animated sky background
+          RiveAnimation.asset(
+            'assets/cloud.riv', // Path to the Rive file
+            fit: BoxFit.cover, // Ensures it covers the entire screen
           ),
-          // SafeArea to ensure UI elements are positioned correctly with the background
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Additional padding or content can go here if needed
-              ],
-            ),
-          ),
+          // Main content overlayed on the background (currently left empty)
         ],
       ),
       floatingActionButton: Padding(
