@@ -39,19 +39,9 @@ class _TaskListPageState extends State<TaskListPage> {
             return dateA.compareTo(dateB);
           });
 
-        int completedCount = sortedRecurrences
-            .where((doc) => doc['status'] == 'completed')
-            .length;
-        double taskProgress = sortedRecurrences.isNotEmpty
-            ? completedCount / sortedRecurrences.length
-            : 0;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // LinearProgressIndicator(value: taskProgress),
-            // Text(
-            //     '${(taskProgress * 100).toStringAsFixed(0)}% of task completed'),
             const SizedBox(height: 10),
             ...sortedRecurrences.map((recurrence) {
               String date = _formatDate(recurrence['date']);
@@ -59,7 +49,9 @@ class _TaskListPageState extends State<TaskListPage> {
               String status = recurrence['status'];
               return ListTile(
                 title: Text('Date: $date'),
-                subtitle: Text('Status: $status'),
+                subtitle: status == 'completed'
+                    ? Text('Status: Completed')
+                    : null, // Show only if completed,
               );
             }).toList(),
           ],
@@ -257,50 +249,6 @@ class _TaskListPageState extends State<TaskListPage> {
                 if (tasks.isEmpty) {
                   return const Center(child: Text('No tasks added yet.'));
                 }
-
-                //   return ListView.builder(
-                //     itemCount: tasks.length,
-                //     itemBuilder: (context, index) {
-                //       final task = tasks[index];
-                //       String taskStartDate = _formatDate(task['startDate']);
-                //       String taskEndDate = _formatDate(task['endDate']);
-                //       return ExpansionTile(
-                //         title: Text(task['task']),
-                //         subtitle: Column (
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: [
-                //         Text(
-                //           'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
-                //         ),const SizedBox(height: 4.0),
-                // LinearProgressIndicator(value: taskProgress),
-                // Text(
-                //   '${(taskProgress * 100).toStringAsFixed(0)}% completed',
-                //   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                // ),
-                //           ],
-                //         ),
-
-                //         trailing: Row(
-                //           mainAxisSize: MainAxisSize.min,
-                //           children: [
-                //             IconButton(
-                //               icon: const Icon(Icons.edit),
-                //               onPressed: () {
-                //                 _editTask(task.reference,
-                //                     task.data() as Map<String, dynamic>);
-                //               },
-                //             ),
-                //           ],
-                //         ),
-                //         children: [
-                //           Padding(
-                //             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                //             child: _buildRecurringDateList(task.reference),
-                //           ),
-                //         ],
-                //       );
-                //     },
-                //   );
                 return ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
