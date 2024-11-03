@@ -8,10 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 // the calendar widget to show the MOnth view, Week View, and day view. There are also onTap, onEventTap, and on DateTap functions to route to different pages
-
-import 'package:flotask/main.dart';
-
-
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
@@ -21,7 +17,6 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage>
     with SingleTickerProviderStateMixin {
-
   // to manage tabs
   TabController? tabController;
 
@@ -30,19 +25,33 @@ class _CalendarPageState extends State<CalendarPage>
 
   String selectedPage = '';
 
-
   @override
   void initState() {
     tabController = TabController(length: 3, vsync: this);
     super.initState();
+
+    // Load events from Firebase on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEventsFromFirebase();
+    });
+  }
+
+  void _loadEventsFromFirebase() async {
+    final eventProvider = context.read<EventProvider>();
+    await eventProvider.loadEventsFromFirebase();
+
+    // After loading events from Firebase, add them to the EventController
+    // _eventController.removeWhere((_) => true); // Clear existing events
+    for (var event in eventProvider.events) {
+      _eventController.add(event.event);
+    }
+    setState(() {}); // Trigger a rebuild to reflect the changes
   }
 
   @override
   Widget build(BuildContext context) {
-
     // get the state of the events with this line
     final eventProvider = context.watch<EventProvider>();
-
 
     return Scaffold(
         appBar: AppBar(
@@ -126,7 +135,6 @@ class _CalendarPageState extends State<CalendarPage>
                 ),
               );
             },
-
           ),
           WeekView(
             controller: _eventController,
@@ -191,7 +199,6 @@ class _CalendarPageState extends State<CalendarPage>
                     ));
           },
         ),
-
         drawer: Drawer(
           child: ListView(padding: EdgeInsets.zero, children: <Widget>[
             const DrawerHeader(

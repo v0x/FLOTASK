@@ -8,26 +8,49 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 
+// COMPONENTS
+import 'package:flotask/components/notifications.dart';
+
 // SCREENS
+import 'package:flotask/pages/login.dart';
+import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
-import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
 
 // TEST voice memos
 import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MainApp()); // Launches the app with MainApp as the root widget
+  Notifications notifications = Notifications();
+  await notifications.initState();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(MainApp()); // Launches the app with MainApp as the root widget
 }
 
-// MainApp is the root of the widget tree and sets the app's theme and entry point.
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  _MainAppState createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _isDarkMode = false; // Track whether dark mode is enabled
+
+  // Function to toggle the theme
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,26 +59,52 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => EventProvider()),
       ],
       child: MaterialApp(
-        debugShowCheckedModeBanner: false, // Hides the debug banner
-        theme: ThemeData(
-          primaryColor:
-              const Color(0xFFF8F8F8), // Set primary color to pastel white
-          scaffoldBackgroundColor: const Color(
-              0xFFF8F8F8), // Apply same pastel white to the background
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          colorScheme: ColorScheme.fromSwatch().copyWith(
-            primary: const Color(0xFFF8F8F8), // Consistently use pastel white
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light().copyWith(
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for large headings
+              // Customize other text styles as needed
+            ),
           ),
-        ),
-        home: const VoiceMemo(), // Main navigation using BottomNav widget
-      ),
+          darkTheme: ThemeData.dark().copyWith(
+            textTheme: TextTheme(
+              bodyLarge:
+                  TextStyle(color: Colors.white70), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Colors.white70), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Colors.white), // Set color for large headings
+              // Customize other text styles as needed
+            ),
+          ),
+          themeMode: _isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light, // Conditionally apply the theme
+          //home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+
+          //set the initial page to LoginPage
+          home: LoginPage(),
+          routes: {
+            '/home': (context) =>
+                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+            '/signup': (context) => SignupPage(), //signup page
+          }),
     );
   }
 }
 
 // BottomNav is a stateful widget managing the bottom navigation bar.
 class BottomNav extends StatefulWidget {
-  const BottomNav({super.key});
+  final VoidCallback toggleTheme; // Function to toggle theme
+  final bool isDarkMode; // Pass the theme state
+
+  const BottomNav(
+      {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
   _BottomNavState createState() => _BottomNavState();
@@ -64,56 +113,38 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int currentPageIndex = 0; // Keeps track of the current tab index
 
-  // Builds the layout for the scaffold with navigation and content based on selected index.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: [
-        HomePage(), // Index 0: Home Page
-        TaskPage(), // Index 1: Task Page
-        CalendarPage(), // Index 2: Calendar Page
-        PomodoroPage(), // Index 3: Pomodoro Page
-        ProgressPage(), // Index 4: Progress Page
-        UserProfilePage(), // Index 5: User Profile Page
+        HomePage(
+            toggleTheme: widget.toggleTheme,
+            isDarkMode: widget.isDarkMode), // Home page with theme toggle
+        TaskPage(),
+        CalendarPage(),
+        PomodoroPage(),
+        ProgressPage(),
+        UserProfilePage(),
       ][currentPageIndex],
-
-      // Defines the bottom navigation bar with icons and highlights based on the selected tab.
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
-        onTap: (index) =>
-            setState(() => currentPageIndex = index), // Update selected page
+        onTap: (index) => setState(() => currentPageIndex = index),
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor:
-            Colors.brown.shade700, // Highlight color for the selected tab
-        unselectedItemColor: Colors.brown.shade300, // Inactive tab color
-        showSelectedLabels: false, // Hides labels for a cleaner look
+        selectedItemColor: Colors.brown.shade700,
+        unselectedItemColor: Colors.brown.shade300,
+        showSelectedLabels: false,
         showUnselectedLabels: false,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 30),
-            label: '',
-          ),
+              icon: Icon(Icons.calendar_today, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
-            icon: Icon(Icons.task, size: 30),
-            label: '',
-          ),
+              icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today, size: 30),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.alarm, size: 30),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 30),
-            label: '',
-          ),
+              icon: Icon(Icons.person, size: 30), label: ''),
         ],
       ),
     );
