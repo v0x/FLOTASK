@@ -28,13 +28,13 @@ class _TaskPageState extends State<TaskPage>
     super.dispose();
   }
 
-  // Function to update task status in Firestore
+  // (wr2)Function to update task status in Firestore
   Future<void> _updateTaskStatus(
       DocumentReference taskRef, bool isCompleted) async {
-    await taskRef.update({'status': isCompleted ? 'completed' : 'todo'});
+    await taskRef.update({'status': isCompleted ? 'completed' : 'todo'}); //wr2
   }
 
-  //work review3
+  //work review2
   // Function to edit a task
   Future<void> _editTask(
       DocumentReference taskRef, Map<String, dynamic> currentTaskData) async {
@@ -158,7 +158,7 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
-  // Function to delete a task
+  // Function to delete a task (wr2)
   Future<void> _deleteTask(DocumentReference taskRef) async {
     await showDialog(
       context: context,
@@ -186,7 +186,7 @@ class _TaskPageState extends State<TaskPage>
       },
     );
   }
-  //WR3
+  //WR2
 
   // Function to build the list of tasks based on the status
   Widget _buildTaskList(String status) {
@@ -244,7 +244,7 @@ class _TaskPageState extends State<TaskPage>
                     if (startDate != null && endDate != null) {
                       List<DateTime> recurringDates = [];
 
-                      // Generate recurring dates between start and end date based on the repeat interval
+                      // (WR3)Generate recurring dates between start and end date based on the repeat interval
                       for (DateTime date = startDate;
                           date.isBefore(endDate) ||
                               date.isAtSameMomentAs(endDate);
@@ -258,7 +258,7 @@ class _TaskPageState extends State<TaskPage>
                           date.month == currentDate.month &&
                           date.day == currentDate.day);
 
-                      // If the task is not scheduled for today, skip it
+                      // If the task is not scheduled for today, skip it (WR3)
                       if (!isTaskForToday) {
                         return const SizedBox.shrink();
                       }

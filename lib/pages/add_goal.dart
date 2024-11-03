@@ -17,7 +17,6 @@ class _AddGoalPageState extends State<AddGoalPage> {
       TextEditingController(); // Controller for goal title
   final List<Map<String, dynamic>> _tasks = []; // Change type to store map data
 
-  //final List<String> _tasks = []; // Local list to store tasks temporarily
   bool _isGoalComplete = false;
   final TextEditingController _categoryController =
       TextEditingController(); //controller for Category
@@ -121,9 +120,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
       context,
       MaterialPageRoute(
         builder: (context) => AddTaskPage(
-          //WR3()
           goalStartDate: _startDate!,
-          goalEndDate: _endDate!, //WR3)
+          goalEndDate: _endDate!,
         ),
       ),
     );
@@ -135,14 +133,6 @@ class _AddGoalPageState extends State<AddGoalPage> {
       });
     }
   }
-
-  // // Remove a task from the local list of tasks and Firestore (if saved)
-  // Future<void> _removeTask(int taskIndex) async {
-  //   final task = _tasks[taskIndex];
-  //   setState(() {
-  //     _tasks.removeAt(taskIndex); // Remove task from local list
-  //     _isGoalComplete = _titleController.text.isNotEmpty && _tasks.isNotEmpty;
-  //   });
 
   @override
   void dispose() {
@@ -207,7 +197,6 @@ class _AddGoalPageState extends State<AddGoalPage> {
                     }),
                     child: Text(_endDate == null
                         ? 'Select End Date' //show if no date selected
-                        //: 'End Date: ${_endDate!.toLocal()}'.split(' ')[0]),
                         : 'End Date: ${_endDate!.year}-${_endDate!.month}-${_endDate!.day}'), // Properly formatted date
                   ),
                 ),
@@ -252,20 +241,20 @@ class _AddGoalPageState extends State<AddGoalPage> {
               child: ListView.builder(
                 itemCount: _tasks.length,
                 itemBuilder: (context, index) {
-                  // Format the dates for display //WR3
+                  // Format the dates for display
                   String startDate = _tasks[index]['startDate'] != null
                       ? '${_tasks[index]['startDate'].year}-${_tasks[index]['startDate'].month}-${_tasks[index]['startDate'].day}'
                       : 'No start date';
                   String endDate = _tasks[index]['endDate'] != null
                       ? '${_tasks[index]['endDate'].year}-${_tasks[index]['endDate'].month}-${_tasks[index]['endDate'].day}'
-                      : 'No end date'; //WR3
+                      : 'No end date';
                   return ListTile(
                     title: Text(_tasks[index]['task']),
                     subtitle: Text(
                         'Repeat Every: ${_tasks[index]['repeatInterval']} days\nDate: $startDate - $endDate'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete), // Delete icon
-                      color: Colors.black, // You can customize the icon color
+                      color: Colors.black,
                       onPressed: () {
                         setState(() {
                           _tasks

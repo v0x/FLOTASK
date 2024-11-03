@@ -202,11 +202,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   'selectedTime': _selectedTime?.format(context),
                 };
 
-                //final task = _taskController.text;
-                // if (task.isNotEmpty) {
-                //   Navigator.pop(
-                //       context, task); // Return the task to the AddGoalPage
-                // }
                 if (taskData['task'].toString().isNotEmpty) {
                   Navigator.pop(context, taskData);
                 }
