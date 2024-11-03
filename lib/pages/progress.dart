@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 class ProgressPage extends StatelessWidget {
   const ProgressPage({super.key});
 
+  //function to format DateTime as a string
   String _formatDate(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }
@@ -66,6 +67,7 @@ class ProgressPage extends StatelessWidget {
                       await _deleteGoal(
                           context, goalRef); // Delete the goal if user confirms
                       Navigator.of(context).pop();
+                      Navigator.of(context).pop();
                     },
                     child: const Text('Delete'),
                   ),
@@ -120,10 +122,10 @@ class ProgressPage extends StatelessWidget {
       final taskCollection = goalRef.collection('tasks');
       final tasks = await taskCollection.get();
       for (final task in tasks.docs) {
-        await task.reference.delete();
+        await task.reference.delete(); //delete each task in the goal
       }
 
-      await goalRef.delete();
+      await goalRef.delete(); //delete the goal itself
     }
   }
 
@@ -138,7 +140,8 @@ class ProgressPage extends StatelessWidget {
         stream: FirebaseFirestore.instance.collection('goals').snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator()); //show loading indicator
           }
 
           final goals = snapshot.data!.docs;
@@ -150,21 +153,23 @@ class ProgressPage extends StatelessWidget {
             itemCount: goals.length,
             itemBuilder: (context, index) {
               final goal = goals[index];
-              final goalRef = goal.reference;
+              //final goalRef = goal.reference;
 
+              //calculate goal progress based on completed and toatl recurrences
               int totalTaskCompletedRecurrences =
                   goal['totalTaskCompletedRecurrences'] ?? 0;
               int totalTaskRecurrences = goal['totalTaskRecurrences'] ?? 0;
               double goalProgress = totalTaskRecurrences > 0
                   ? totalTaskCompletedRecurrences / totalTaskRecurrences
                   : 0;
-
+              //format start and end dates for display
               String goalStartDate =
                   _formatDate((goal['startDate'] as Timestamp).toDate());
               String goalEndDate =
                   _formatDate((goal['endDate'] as Timestamp).toDate());
 
               return ListTile(
+                //goal with edit icon
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -176,6 +181,7 @@ class ProgressPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                //showing goal details and progress bar
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -186,6 +192,7 @@ class ProgressPage extends StatelessWidget {
                         '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
                   ],
                 ),
+                //tap to naviagte to the Tasklist
                 onTap: () {
                   Navigator.push(
                     context,
