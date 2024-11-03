@@ -29,6 +29,9 @@ class EventModel {
 // for archive list functionality
   bool isArchived;
 
+  // add voice memos STT
+  String? voiceMemos;
+
   EventModel(
       {required this.event,
       this.id,
@@ -42,5 +45,6 @@ class EventModel {
       this.isRecurring = false,
       this.isReminder = true,
       this.lastCompletedDate,
-      this.isArchived = false});
+      this.isArchived = false,
+      this.voiceMemos});
 }

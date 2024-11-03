@@ -61,9 +61,16 @@ class EventProvider extends ChangeNotifier {
 
   // Method to add a new event
   Future<void> addEvent(CalendarEventData eventData,
-      {String? note, List<String>? tags, bool? isRecurring}) async {
+      {String? note,
+      List<String>? tags,
+      bool? isRecurring,
+      String? voiceMemos}) async {
     final newEvent = EventModel(
-        event: eventData, note: note, tags: tags, isRecurring: isRecurring!);
+      event: eventData,
+      note: note,
+      tags: tags,
+      isRecurring: isRecurring!,
+    );
 
 // Save the event to Firestore
     DocumentReference docRef = await _firestore.collection('events').add({
@@ -267,6 +274,20 @@ class EventProvider extends ChangeNotifier {
       'monthStreak': event.monthStreak,
       'yearStreak': event.yearStreak
     });
+
+    notifyListeners();
+  }
+
+  Future<void> saveMemo(String eventId, String text) async {
+    final index = _events.indexWhere((element) => element.id == eventId);
+    final event = _events[index];
+
+    event.voiceMemos = text;
+
+    await FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventId)
+        .update({'voiceMemos': text});
 
     notifyListeners();
   }

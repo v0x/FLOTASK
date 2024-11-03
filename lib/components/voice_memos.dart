@@ -1,31 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flotask/models/event_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flotask/models/event_model.dart';
 
 class VoiceMemo extends StatefulWidget {
-  const VoiceMemo({super.key});
+  final EventModel? event;
+
+  VoiceMemo({
+    this.event,
+  });
 
   @override
   State<VoiceMemo> createState() => _VoiceMemoState();
 }
 
 class _VoiceMemoState extends State<VoiceMemo> {
+  late TextEditingController speech;
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   bool _showTextField = false;
-  TextEditingController speech = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    speech = TextEditingController();
+    speech.text = widget.event!.voiceMemos ?? '';
     _initSpeech();
   }
 
+// initialize speech to text
   void _initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
 
+// listen for speech
   void _startListening() async {
     setState(() => _showTextField = true);
     speech.text = speech.text.trim();
@@ -37,11 +49,13 @@ class _VoiceMemoState extends State<VoiceMemo> {
     setState(() {});
   }
 
+// stop recording
   void _stopListening() async {
     await _speechToText.stop();
     setState(() {});
   }
 
+// add STT to existing text
   void _onSpeechResult(SpeechRecognitionResult result) {
     if (result.finalResult) {
       setState(() {
@@ -50,6 +64,7 @@ class _VoiceMemoState extends State<VoiceMemo> {
     }
   }
 
+// basic widget to show text in textbox with voice icon and edit icon
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -75,6 +90,15 @@ class _VoiceMemoState extends State<VoiceMemo> {
               const SizedBox(width: 12),
             ],
             if (speech.text.isNotEmpty) ...[
+              IconButton(
+                onPressed: () {
+                  context
+                      .read<EventProvider>()
+                      .saveMemo(widget.event!.id!, speech.text);
+                },
+                tooltip: 'Save memo',
+                icon: const Icon(Icons.save),
+              ),
               IconButton(
                 onPressed: () =>
                     setState(() => _showTextField = !_showTextField),

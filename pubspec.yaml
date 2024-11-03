@@ -24,7 +24,6 @@ dependencies:
   markdown_editor_plus: ^0.2.15
   provider: ^6.1.2
   uuid: ^4.5.0
-<<<<<<< HEAD
   speech_to_text: 6.6.0
 
    # Audio recording
@@ -33,9 +32,7 @@ dependencies:
   audioplayers: 6.1.0  # For playing the recorded audio
 
 
-=======
   firebase_auth: ^4.20.0
->>>>>>> matt-streaks
 
 dev_dependencies:
   flutter_test:

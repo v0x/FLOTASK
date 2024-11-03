@@ -1,5 +1,6 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/components/textfield.dart';
+import 'package:flotask/components/voice_memos.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
@@ -164,10 +165,12 @@ class _EventDialogState extends State<EventDialog> {
 
                   widget.eventController.add(event);
 
-                  eventProvider.addEvent(event,
-                      note: "Some notes",
-                      tags: ["work"],
-                      isRecurring: _isRecurring);
+                  eventProvider.addEvent(
+                    event,
+                    note: "Some notes",
+                    tags: ["work"],
+                    isRecurring: _isRecurring,
+                  );
                   print(eventProvider);
                   Navigator.of(context).pop();
                 },
