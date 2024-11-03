@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_goal.dart';
+import 'package:flotask/utils/firestore_helpers.dart';
 
 //stateful widget for the Taskpage
 class TaskPage extends StatefulWidget {
@@ -28,10 +29,132 @@ class _TaskPageState extends State<TaskPage>
     super.dispose();
   }
 
-  // Function to update task status in Firestore
-  Future<void> _updateTaskStatus(
-      DocumentReference taskRef, bool isCompleted) async {
-    await taskRef.update({'status': isCompleted ? 'completed' : 'todo'});
+  Future<void> _updateRecurrenceStatus(
+      DocumentReference recurrenceRef,
+      DocumentReference taskRef,
+      DocumentReference goalRef,
+      bool isCompleted) async {
+    await updateRecurrenceStatus(
+      recurrenceRef: recurrenceRef,
+      taskRef: taskRef,
+      goalRef: goalRef,
+      isCompleted: isCompleted,
+    );
+  }
+
+  //helper function to update the completion status of a specific recurrence
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  // Function to build the list of today's recurrences for a given status
+  Widget _buildTaskList(String status) {
+    final today = _formatDate(DateTime.now());
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('goals').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final goals = snapshot.data!.docs;
+        List<Widget> taskWidgets = [];
+
+        for (var goal in goals) {
+          taskWidgets.add(
+            StreamBuilder<QuerySnapshot>(
+              stream: goal.reference.collection('tasks').snapshots(),
+              builder: (context, taskSnapshot) {
+                if (!taskSnapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+
+                final tasks = taskSnapshot.data!.docs;
+                if (tasks.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                return Column(
+                  children: tasks.map((task) {
+                    String taskName = task['task'];
+                    String goalName = goal['title'];
+
+                    // Fetch only today's recurrences for the task
+                    return StreamBuilder<QuerySnapshot>(
+                      stream: task.reference
+                          .collection('recurrences')
+                          .where('status', isEqualTo: status)
+                          .snapshots(),
+                      builder: (context, recurrenceSnapshot) {
+                        if (!recurrenceSnapshot.hasData) {
+                          return const SizedBox.shrink();
+                        }
+
+                        //final recurrences = recurrenceSnapshot.data!.docs;
+                        final recurrences = recurrenceSnapshot.data!.docs.where(
+                          (recurrence) {
+                            DateTime recurrenceDate =
+                                (recurrence['date'] as Timestamp).toDate();
+                            return _formatDate(recurrenceDate) == today;
+                          },
+                        );
+                        if (recurrences.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          children: recurrences.map((recurrence) {
+                            bool isCompleted =
+                                recurrence['status'] == 'completed';
+
+                            return ListTile(
+                              leading: Checkbox(
+                                value: isCompleted,
+                                onChanged: (bool? value) {
+                                  if (value != null) {
+                                    _updateRecurrenceStatus(
+                                        recurrence.reference,
+                                        task.reference,
+                                        goal.reference,
+                                        value);
+                                  }
+                                },
+                              ),
+                              title: Text(taskName),
+                              subtitle: Text(
+                                  'Goal: $goalName\nDate: ${_formatDate((task['startDate'] as Timestamp).toDate())} to ${_formatDate((task['endDate'] as Timestamp).toDate())}\nTime: ${task['selectedTime'] ?? 'Any time'}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () {
+                                      _editTask(task.reference,
+                                          task.data() as Map<String, dynamic>);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          );
+        }
+
+        if (taskWidgets.isEmpty) {
+          return Center(child: const Text('No tasks for today.'));
+        }
+
+        return ListView(children: taskWidgets);
+      },
+    );
   }
 
   //work review3
@@ -183,128 +306,6 @@ class _TaskPageState extends State<TaskPage>
             ),
           ],
         );
-      },
-    );
-  }
-  //WR3
-
-  // Function to build the list of tasks based on the status
-  Widget _buildTaskList(String status) {
-    final currentDate = DateTime.now(); //get the current date
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('goals')
-          .snapshots(), // Listen for changes in the goals collection
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final goals = snapshot.data!.docs;
-        List<Widget> taskWidgets = [];
-
-        for (var goal in goals) {
-          // Get tasks under each goal
-          taskWidgets.add(
-            StreamBuilder<QuerySnapshot>(
-              stream: goal.reference
-                  .collection('tasks')
-                  .where('status', isEqualTo: status)
-                  .snapshots(),
-              builder: (context, taskSnapshot) {
-                if (!taskSnapshot.hasData) {
-                  return const SizedBox.shrink(); // Show nothing if no data
-                }
-
-                final tasks = taskSnapshot.data!.docs;
-                if (tasks.isEmpty) {
-                  return const SizedBox
-                      .shrink(); // If no tasks match, show nothing
-                }
-
-                return Column(
-                  children: tasks.map((task) {
-                    final taskRef = task.reference;
-                    bool isCompleted = task['status'] == 'completed';
-
-                    // Include the goal name in the task display
-                    String goalName = goal['title']; // Goal title
-
-                    DateTime? startDate = (task['startDate'] != null)
-                        ? (task['startDate'] as Timestamp).toDate()
-                        : null;
-                    DateTime? endDate = (task['endDate'] != null)
-                        ? (task['endDate'] as Timestamp).toDate()
-                        : null;
-                    int repeatInterval = task['repeatInterval'];
-                    String? selectedTime = task['selectedTime'];
-
-                    // Filter tasks based on the current date and recurring dates
-                    if (startDate != null && endDate != null) {
-                      List<DateTime> recurringDates = [];
-
-                      // Generate recurring dates between start and end date based on the repeat interval
-                      for (DateTime date = startDate;
-                          date.isBefore(endDate) ||
-                              date.isAtSameMomentAs(endDate);
-                          date = date.add(Duration(days: repeatInterval))) {
-                        recurringDates.add(date);
-                      }
-
-                      // Check if the current date matches any of the recurring dates
-                      bool isTaskForToday = recurringDates.any((date) =>
-                          date.year == currentDate.year &&
-                          date.month == currentDate.month &&
-                          date.day == currentDate.day);
-
-                      // If the task is not scheduled for today, skip it
-                      if (!isTaskForToday) {
-                        return const SizedBox.shrink();
-                      }
-                    }
-
-                    return ListTile(
-                      leading: Checkbox(
-                        value: isCompleted,
-                        //value: status == 'completed',
-                        onChanged: (bool? value) {
-                          if (value != null) {
-                            _updateTaskStatus(taskRef, value);
-                          }
-                        },
-                      ),
-                      title: Text(task['task']),
-                      subtitle:
-                          //Text('Repeat Interval: ${task['repeatInterval']}'),
-                          Text(
-                              'Goal: $goalName\nTime: ${task['selectedTime'] ?? 'Any time'}'), // Goal name and repeat interval
-                      trailing: Row(
-                        //update UI for edit and delete (WR3)
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () {
-                              _editTask(
-                                  taskRef, task.data() as Map<String, dynamic>);
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          );
-        }
-        // If no tasks for today, show a simple message
-        if (taskWidgets.isEmpty) {
-          return Center(child: const Text('No tasks for today.'));
-        }
-
-        return ListView(children: taskWidgets);
       },
     );
   }
