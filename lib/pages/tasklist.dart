@@ -19,6 +19,55 @@ class _TaskListPageState extends State<TaskListPage> {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
+  Widget _buildRecurringDateList(DocumentReference taskRef) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: taskRef.collection('recurrences').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final recurrences = snapshot.data!.docs;
+        if (recurrences.isEmpty) {
+          return const Text('No recurring dates yet.');
+        }
+
+        final sortedRecurrences = recurrences
+          ..sort((a, b) {
+            final dateA = (a['date'] as Timestamp).toDate();
+            final dateB = (b['date'] as Timestamp).toDate();
+            return dateA.compareTo(dateB);
+          });
+
+        int completedCount = sortedRecurrences
+            .where((doc) => doc['status'] == 'completed')
+            .length;
+        double taskProgress = sortedRecurrences.isNotEmpty
+            ? completedCount / sortedRecurrences.length
+            : 0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // LinearProgressIndicator(value: taskProgress),
+            // Text(
+            //     '${(taskProgress * 100).toStringAsFixed(0)}% of task completed'),
+            const SizedBox(height: 10),
+            ...sortedRecurrences.map((recurrence) {
+              String date = _formatDate(recurrence['date']);
+
+              String status = recurrence['status'];
+              return ListTile(
+                title: Text('Date: $date'),
+                subtitle: Text('Status: $status'),
+              );
+            }).toList(),
+          ],
+        );
+      },
+    );
+  }
+
   // Function to delete a task
   Future<void> _deleteTask(
       BuildContext context, DocumentReference taskRef) async {
@@ -209,29 +258,123 @@ class _TaskListPageState extends State<TaskListPage> {
                   return const Center(child: Text('No tasks added yet.'));
                 }
 
+                //   return ListView.builder(
+                //     itemCount: tasks.length,
+                //     itemBuilder: (context, index) {
+                //       final task = tasks[index];
+                //       String taskStartDate = _formatDate(task['startDate']);
+                //       String taskEndDate = _formatDate(task['endDate']);
+                //       return ExpansionTile(
+                //         title: Text(task['task']),
+                //         subtitle: Column (
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //         Text(
+                //           'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
+                //         ),const SizedBox(height: 4.0),
+                // LinearProgressIndicator(value: taskProgress),
+                // Text(
+                //   '${(taskProgress * 100).toStringAsFixed(0)}% completed',
+                //   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                // ),
+                //           ],
+                //         ),
+
+                //         trailing: Row(
+                //           mainAxisSize: MainAxisSize.min,
+                //           children: [
+                //             IconButton(
+                //               icon: const Icon(Icons.edit),
+                //               onPressed: () {
+                //                 _editTask(task.reference,
+                //                     task.data() as Map<String, dynamic>);
+                //               },
+                //             ),
+                //           ],
+                //         ),
+                //         children: [
+                //           Padding(
+                //             padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                //             child: _buildRecurringDateList(task.reference),
+                //           ),
+                //         ],
+                //       );
+                //     },
+                //   );
                 return ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
                     String taskStartDate = _formatDate(task['startDate']);
                     String taskEndDate = _formatDate(task['endDate']);
-                    return ListTile(
-                      title: Text(task['task']),
-                      subtitle: Text(
-                        'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
+
+                    return StreamBuilder<QuerySnapshot>(
+                      stream:
+                          task.reference.collection('recurrences').snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const CircularProgressIndicator();
+                        }
+
+                        final recurrences = snapshot.data!.docs;
+                        if (recurrences.isEmpty) {
+                          // Show task details without a progress bar if there are no recurrences
+                          return ListTile(
+                            title: Text(task['task']),
+                            subtitle: Text(
+                              'Repeat every: ${task['repeatInterval']} days\nDate: $taskStartDate to $taskEndDate',
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                _editTask(task.reference,
+                                    task.data() as Map<String, dynamic>);
+                              },
+                            ),
+                          );
+                        }
+
+                        // Calculate task progress based on completed recurrences
+                        int completedCount = recurrences
+                            .where((doc) => doc['status'] == 'completed')
+                            .length;
+                        double taskProgress = recurrences.isNotEmpty
+                            ? completedCount / recurrences.length
+                            : 0;
+
+                        return ExpansionTile(
+                          title: Text(task['task']),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  'Repeat every: ${task['repeatInterval']} days'),
+                              Text('Date: $taskStartDate to $taskEndDate'),
+                              const SizedBox(height: 4.0),
+                              LinearProgressIndicator(value: taskProgress),
+                              Text(
+                                '${(taskProgress * 100).toStringAsFixed(0)}% completed',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                          trailing: IconButton(
                             icon: const Icon(Icons.edit),
                             onPressed: () {
                               _editTask(task.reference,
                                   task.data() as Map<String, dynamic>);
                             },
                           ),
-                        ],
-                      ),
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: _buildRecurringDateList(task.reference),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                 );
