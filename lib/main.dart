@@ -16,6 +16,7 @@ import 'package:flotask/pages/login.dart';
 import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
@@ -121,6 +122,7 @@ class _BottomNavState extends State<BottomNav> {
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
+        Category(),
         UserProfilePage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -140,6 +142,8 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
         ],
