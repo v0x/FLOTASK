@@ -3,8 +3,16 @@ import 'package:flutter/material.dart';
 import 'tasklist.dart'; // Import TaskListPage
 import 'package:intl/intl.dart';
 
-class ProgressPage extends StatelessWidget {
+class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
+
+  @override
+  _ProgressPageState createState() => _ProgressPageState();
+}
+
+class _ProgressPageState extends State<ProgressPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   //function to format DateTime as a string
   String _formatDate(DateTime date) {
@@ -135,6 +143,22 @@ class ProgressPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Progress Page'),
         backgroundColor: const Color(0xFFEBEAE3),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Search by goal title or category...',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.search),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('goals').snapshots(),
@@ -144,7 +168,15 @@ class ProgressPage extends StatelessWidget {
                 child: CircularProgressIndicator()); //show loading indicator
           }
 
-          final goals = snapshot.data!.docs;
+          //final goals = snapshot.data!.docs;
+          final goals = snapshot.data!.docs.where((goal) {
+            //filter goals based on the search query
+            final title = (goal['title'] ?? '').toString().toLowerCase();
+            final category = (goal['category'] ?? '').toString().toLowerCase();
+            return title.contains(_searchQuery) ||
+                category.contains(_searchQuery);
+          }).toList();
+
           if (goals.isEmpty) {
             return const Center(child: Text('No goals created yet.'));
           }
