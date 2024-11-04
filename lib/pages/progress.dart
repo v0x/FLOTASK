@@ -11,8 +11,9 @@ class ProgressPage extends StatefulWidget {
 }
 
 class _ProgressPageState extends State<ProgressPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final TextEditingController _searchController =
+      TextEditingController(); //search bar WR4
+  String _searchQuery = ''; //search bar WR4
 
   //function to format DateTime as a string
   String _formatDate(DateTime date) {
@@ -146,15 +147,18 @@ class _ProgressPageState extends State<ProgressPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50.0),
           child: TextField(
-            controller: _searchController,
+            controller: _searchController, //search bar WR4
             decoration: const InputDecoration(
-              hintText: 'Search by goal title or category...',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search),
+              //search bar WR4//search bar WR4
+              hintText: 'Search by goal title or category or note...',
+              border: OutlineInputBorder(), //search bar WR4
+              prefixIcon: Icon(Icons.search), //search bar WR4
             ),
             onChanged: (value) {
+              //search bar WR4
               setState(() {
-                _searchQuery = value.toLowerCase();
+                //search bar WR4
+                _searchQuery = value.toLowerCase(); //search bar WR4
               });
             },
           ),
@@ -170,11 +174,17 @@ class _ProgressPageState extends State<ProgressPage> {
 
           //final goals = snapshot.data!.docs;
           final goals = snapshot.data!.docs.where((goal) {
+            //search bar WR4
             //filter goals based on the search query
-            final title = (goal['title'] ?? '').toString().toLowerCase();
-            final category = (goal['category'] ?? '').toString().toLowerCase();
+            final title =
+                (goal['title'] ?? '').toString().toLowerCase(); //search bar WR4
+            final category = (goal['category'] ?? '')
+                .toString()
+                .toLowerCase(); //search bar WR4
+            final note = (goal['note'] ?? '').toString().toLowerCase();
             return title.contains(_searchQuery) ||
-                category.contains(_searchQuery);
+                category.contains(_searchQuery) ||
+                note.contains(_searchQuery); //search bar WR4
           }).toList();
 
           if (goals.isEmpty) {
