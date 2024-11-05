@@ -23,7 +23,7 @@ List<Task> generateTasks(){
 //Category Page Code & Logic Stuff:
 List<Task> tasks = generateTasks(); 
 Map<String, List<Task>> folders = {};
-String? openFolder; //WDTD?
+String? openFolder;
 
 class Category extends StatefulWidget{
   @override
@@ -209,7 +209,7 @@ class _CategoryState extends State<Category> {
             .map((task) => ListTile(
               key: ValueKey(task.taskName),
               title: Text(task.taskName),
-              tileColor: task.taskColor,
+              tileColor: task.taskColor.withOpacity(0.1),
             onTap: () {
               removeTaskFromFolder(folderName, task);
             },
