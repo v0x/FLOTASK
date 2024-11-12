@@ -39,12 +39,13 @@ List<Task> tasks = [
 class Notifications{
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
+/*
   void requestPerms(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) {
     flutterLocalNotificationsPlugin
     .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
     ?.requestPermission();
   }
-   
+  */ 
   Future<void> initState() async{
     WidgetsFlutterBinding.ensureInitialized();
     //Timezone Related
@@ -59,7 +60,7 @@ class Notifications{
     final InitializationSettings initializationSettings 
       = InitializationSettings(android: androidInitializationSettings);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-    requestPerms(flutterLocalNotificationsPlugin);
+    //requestPerms(flutterLocalNotificationsPlugin);
     scheduleNotifsForTasks(tasks, flutterLocalNotificationsPlugin);
   }
 

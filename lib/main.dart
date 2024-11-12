@@ -12,8 +12,11 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/components/notifications.dart';
 
 // SCREENS
+import 'package:flotask/pages/login.dart';
+import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
@@ -54,34 +57,41 @@ class _MainAppState extends State<MainApp> {
         ChangeNotifierProvider(create: (context) => EventProvider()),
       ],
       child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.light().copyWith(
-          textTheme: TextTheme(
-            bodyLarge: TextStyle(
-                color: Color(0xFF8D6E63)), // Set color for normal text
-            bodyMedium: TextStyle(
-                color: Color(0xFF8D6E63)), // Set color for smaller text
-            displayLarge: TextStyle(
-                color: Color(0xFF8D6E63)), // Set color for large headings
-            // Customize other text styles as needed
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light().copyWith(
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for large headings
+              // Customize other text styles as needed
+            ),
           ),
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          textTheme: TextTheme(
-            bodyLarge:
-                TextStyle(color: Colors.white70), // Set color for normal text
-            bodyMedium:
-                TextStyle(color: Colors.white70), // Set color for smaller text
-            displayLarge:
-                TextStyle(color: Colors.white), // Set color for large headings
-            // Customize other text styles as needed
+          darkTheme: ThemeData.dark().copyWith(
+            textTheme: TextTheme(
+              bodyLarge:
+                  TextStyle(color: Colors.white70), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Colors.white70), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Colors.white), // Set color for large headings
+              // Customize other text styles as needed
+            ),
           ),
-        ),
-        themeMode: _isDarkMode
-            ? ThemeMode.dark
-            : ThemeMode.light, // Conditionally apply the theme
-        home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
-      ),
+          themeMode: _isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light, // Conditionally apply the theme
+          //home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+
+          //set the initial page to LoginPage
+          home: LoginPage(),
+          routes: {
+            '/home': (context) =>
+                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+            '/signup': (context) => SignupPage(), //signup page
+          }),
     );
   }
 }
@@ -112,6 +122,7 @@ class _BottomNavState extends State<BottomNav> {
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
+        Category(),
         UserProfilePage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -131,6 +142,8 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
         ],
