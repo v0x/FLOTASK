@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flotask/components/resource.dart';
 
 class Menu extends StatelessWidget {
   final VoidCallback toggleTheme; // Add toggle function
@@ -39,7 +40,10 @@ class Menu extends StatelessWidget {
                       context: context, //DM
                       icon: Icons.book,
                       title: 'Resources',
-                      onTap: () => print('Resources clicked'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ResourcesPage()), // Navigating to ResourcePage
+                      ),
                     ),
                     buildMenuItem(
                       context: context, //DM
