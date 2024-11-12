@@ -10,13 +10,15 @@ class EventModel {
   String? category;
   bool isCompleted;
   int streak;
+  bool isArchived;
 
-  EventModel({
-    required this.event,
-    this.note,
-    this.tags,
-    this.category = "Home",
-    this.isCompleted = false,
-    this.streak = 0,
-  }) : id = Uuid().v4();
+  EventModel(
+      {required this.event,
+      this.note,
+      this.tags,
+      this.category = "Home",
+      this.isCompleted = false,
+      this.streak = 0,
+      this.isArchived = false})
+      : id = Uuid().v4();
 }
