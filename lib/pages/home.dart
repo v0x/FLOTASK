@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'package:flotask/components/menu.dart';
+import 'dart:async';
 
 class HomePage extends StatefulWidget {
   @override
@@ -8,54 +9,106 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); // Controls the Drawer
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Timer _timer;
+  int _currentStage = 0;
+  SMIInput<double>? _growInput;
+
+  @override
+  void initState() {
+    super.initState();
+    _startLoop();
+  }
+
+  void _onRiveInit(Artboard artboard) {
+    final controller = StateMachineController.fromArtboard(artboard, 'State Machine 1');
+    if (controller != null) {
+      artboard.addController(controller);
+      _growInput = controller.findInput<double>('Grow');
+
+      if (_growInput == null) {
+        print('Error: grow input not found');
+      } else {
+        print('grow input initialized');
+        _growInput!.value = 0; // Start at Level Null
+      }
+    } else {
+      print('Error: StateMachineController not found');
+    }
+  }
+
+  void _startLoop() {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      setState(() {
+        if (_growInput != null) {
+          if (_currentStage < 3) {
+            // Move to the next stage
+            _currentStage += 1;
+            _growInput!.value = _currentStage.toDouble();
+            print('Animation updated to: Stage $_currentStage');
+          } else {
+            // After reaching Stage 3, reset to "Level Null"
+            _growInput!.value = 0;
+            _currentStage = 0;
+            print('Animation reset to: Level Null');
+          }
+        } else {
+          print('grow input is null');
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Menu(), // Side menu using the Menu widget
+      drawer: Menu(),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0, // Flat, clean AppBar with no shadow
+        backgroundColor: const Color(0xFFFFE6E6),
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32), 
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(), // Opens the Drawer via GlobalKey
+          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.person_outline_rounded, size: 36, color: Colors.black.withOpacity(0.7)),
-            onPressed: () => print('Profile clicked'), // Placeholder for profile functionality
+            onPressed: () => print('Profile clicked'),
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Animated sky background
           RiveAnimation.asset(
-            'assets/cloud.riv', // Path to the Rive file
-            fit: BoxFit.cover, // Ensures it covers the entire screen
+            'assets/growing_plant.riv',
+            fit: BoxFit.cover,
+            onInit: _onRiveInit,
           ),
-          // Main content overlayed on the background (currently left empty)
         ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: FloatingActionButton(
-          onPressed: _showAddTaskDialog, // Opens a dialog to add a new task
-          child: const Icon(Icons.add, size: 36), // Large add icon for a clear call to action
-          backgroundColor: const Color(0xFFD2B48C), // Light brown/beige color
+          onPressed: _showAddTaskDialog,
+          child: const Icon(Icons.add, size: 36),
+          backgroundColor: const Color(0xFFD2B48C),
           tooltip: 'Add Task',
-          elevation: 10, // Creates a floating effect
+          elevation: 10,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30), // Circular, bubbly appearance
+            borderRadius: BorderRadius.circular(30),
           ),
         ),
       ),
     );
   }
 
-  // Opens a dialog to add a new task
   void _showAddTaskDialog() {
     final TextEditingController _taskController = TextEditingController();
 
@@ -80,14 +133,14 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 final task = _taskController.text;
                 if (task.isNotEmpty) {
-                  print('Task added: $task'); // Placeholder for task addition logic
-                  Navigator.pop(context); // Closes the dialog
+                  print('Task added: $task');
+                  Navigator.pop(context);
                 }
               },
               child: Text('Add', style: TextStyle(color: Colors.black.withOpacity(0.7))),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context), // Closes the dialog without adding a task
+              onPressed: () => Navigator.pop(context),
               child: Text('Cancel', style: TextStyle(color: Colors.black.withOpacity(0.7))),
             ),
           ],
