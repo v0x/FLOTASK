@@ -208,6 +208,27 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Voice Memos',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      VoiceMemo(event: event),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

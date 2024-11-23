@@ -70,6 +70,7 @@ class EventProvider extends ChangeNotifier {
       note: note,
       tags: tags,
       isRecurring: isRecurring!,
+      voiceMemos: voiceMemos,
     );
 
 // Save the event to Firestore
@@ -88,7 +89,8 @@ class EventProvider extends ChangeNotifier {
       'yearStreak': newEvent.yearStreak,
       'isArchived': newEvent.isArchived,
       'note': newEvent.note,
-      'tags': newEvent.tags
+      'tags': newEvent.tags,
+      'voiceMemos': newEvent.voiceMemos
     });
 
     newEvent.id = docRef.id;
@@ -298,6 +300,7 @@ class EventProvider extends ChangeNotifier {
     DateTime? endTime,
     String? description,
     bool? isRecurring,
+    String? voiceMemos,
   }) async {
     try {
       final docRef = _firestore.collection('events').doc(eventId);
@@ -308,6 +311,7 @@ class EventProvider extends ChangeNotifier {
       if (endTime != null) updates['endTime'] = endTime.toIso8601String();
       if (description != null) updates['description'] = description;
       if (isRecurring != null) updates['isRecurring'] = isRecurring;
+      if (voiceMemos != null) updates['voiceMemos'] = voiceMemos;
 
       await docRef.update(updates);
 
