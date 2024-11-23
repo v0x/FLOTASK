@@ -315,11 +315,10 @@ class _TaskPageState extends State<TaskPage>
           ),
           //content of each tab
           body: TabBarView(
-            controller: _tabController, 
+            controller: _tabController,
             children: [
-              _buildTaskList('todo'), 
-              _buildTaskList(
-                  'completed'), /
+              _buildTaskList('todo'),
+              _buildTaskList('completed'),
             ],
           ),
           //floating action button to ass a new goal
@@ -334,7 +333,7 @@ class _TaskPageState extends State<TaskPage>
                 );
               },
               backgroundColor: Colors.black,
-              shape: const CircleBorder(), 
+              shape: const CircleBorder(),
               child: const Icon(
                 Icons.add,
                 color: Colors.white,
