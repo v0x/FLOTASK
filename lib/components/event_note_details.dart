@@ -38,6 +38,17 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
     super.dispose();
   }
 
+  String _getStreakFlair(EventModel event) {
+    if (event.yearStreak != null && event.yearStreak! > 0) {
+      return '🏆';
+    } else if (event.monthStreak != null && event.monthStreak! > 0) {
+      return '🥈';
+    } else if (event.dayStreak != null && event.dayStreak! > 0) {
+      return '🥉';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,9 +116,32 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                           children: [
                             Icon(Icons.repeat, color: Colors.orange[700]),
                             const SizedBox(width: 8),
-                            Text(
-                              'Recurring Task - Streak: ${event.dayStreak} days',
-                              style: const TextStyle(fontSize: 16),
+                            Row(
+                              children: [
+                                Text(
+                                  _getStreakFlair(event),
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Streak: ${event.dayStreak} days',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                                if (event.monthStreak! > 0) ...[
+                                  const Text(', '),
+                                  Text(
+                                    '${event.monthStreak} months',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                                if (event.yearStreak! > 0) ...[
+                                  const Text(', '),
+                                  Text(
+                                    '${event.yearStreak} years',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),

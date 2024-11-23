@@ -189,43 +189,117 @@ class _CalendarPageState extends State<CalendarPage>
         ]),
 
         // action button to show a dialog to input a calendar event
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.add),
-          onPressed: () {
-            showDialog(
+        // floatingActionButton: FloatingActionButton(
+        //   child: const Icon(Icons.add),
+        //   onPressed: () {
+        //     showDialog(
+        //         context: context,
+        //         builder: (BuildContext context) => EventDialog(
+        //               eventController: _eventController,
+        //             ));
+        //   },
+        // ),
+
+        //floating action button to add a new goal
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              //navigate to event dialog when clicking on the button
+              showDialog(
                 context: context,
                 builder: (BuildContext context) => EventDialog(
-                      eventController: _eventController,
-                    ));
-          },
+                  eventController: _eventController,
+                ),
+              );
+            },
+            backgroundColor: Colors.black,
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
         ),
         drawer: Drawer(
-          child: ListView(padding: EdgeInsets.zero, children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Notes',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+          child: SafeArea(
+            child: Column(
+              children: <Widget>[
+                Container(
+                  color: const Color(0xFFEBEAE3),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.note_alt_outlined,
+                          color: Colors.black, size: 30),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Notes',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: [
+                      ...eventProvider.events.map((e) => Card(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 16),
+                            elevation: 2,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              title: Text(
+                                e.event.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    e.note?.toString() ?? 'No notes',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy')
+                                        .format(e.event.date),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EventDetailWithNotes(event: e),
+                                  ),
+                                );
+                              },
+                            ),
+                          )),
+                    ],
+                  ),
+                ),
+              ],
             ),
-
-            // show list of events in side drawer and add ability to view event details
-            ...eventProvider.events.map((e) => ListTile(
-                  title: Text(e.note.toString()),
-                  onTap: () => {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                EventDetailWithNotes(event: e)))
-                  },
-                ))
-          ]),
+          ),
         ));
   }
 }

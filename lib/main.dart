@@ -55,9 +55,6 @@ class _RootLayoutState extends State<RootLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Submit Data to Firestore test again'),
-        ),
         body: [
           HomePage(pageIndex: currentPageIndex),
           TaskPage(),

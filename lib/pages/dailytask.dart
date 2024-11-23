@@ -107,6 +107,10 @@ class _TaskPageState extends State<TaskPage>
                   onChanged: (bool? value) async {
                     if (value != null) {
                       await eventProvider.toggleComplete(event.id!, value);
+                      if (value && event.isRecurring) {
+                        // Update streak when completing a recurring task
+                        await eventProvider.updateStreak(event.id!);
+                      }
                     }
                   },
                 ),
@@ -122,11 +126,21 @@ class _TaskPageState extends State<TaskPage>
                         ),
                       ),
                     ),
-                    if (event.isRecurring)
-                      const Text(
-                        '🔄', // Recurring emoji
-                        style: TextStyle(fontSize: 16),
+                    if (event.isRecurring) ...[
+                      Text(
+                        _getStreakFlair(event),
+                        style: const TextStyle(fontSize: 20),
                       ),
+                      const SizedBox(width: 4),
+                      if (event.dayStreak != null && event.dayStreak! > 0)
+                        Text(
+                          '${event.dayStreak}d',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                    ],
                   ],
                 ),
                 subtitle: Column(
@@ -263,6 +277,17 @@ class _TaskPageState extends State<TaskPage>
     }
   }
 
+  String _getStreakFlair(EventModel event) {
+    if (event.yearStreak != null && event.yearStreak! > 0) {
+      return '🏆';
+    } else if (event.monthStreak != null && event.monthStreak! > 0) {
+      return '🥈';
+    } else if (event.dayStreak != null && event.dayStreak! > 0) {
+      return '🥉';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<EventProvider>(
@@ -272,7 +297,7 @@ class _TaskPageState extends State<TaskPage>
           appBar: AppBar(
             title: Center(
               child: Text(
-                "Daily tasks",
+                "Tasks",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -404,15 +429,17 @@ class _TaskPageState extends State<TaskPage>
               _buildTaskList('completed'),
             ],
           ),
-          //floating action button to ass a new goal
+          //floating action button to add a new goal
           floatingActionButton: Padding(
             padding: const EdgeInsets.all(10.0),
             child: FloatingActionButton(
               onPressed: () {
-                //navigate to add goal page when clicking on the button
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddGoalPage()),
+                //navigate to event dialog when clicking on the button
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => EventDialog(
+                    eventController: EventController(),
+                  ),
                 );
               },
               backgroundColor: Colors.black,
