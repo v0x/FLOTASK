@@ -107,19 +107,18 @@ class EventProvider extends ChangeNotifier {
 
   // method to update note
   Future<void> updateNote(String eventId, String note) async {
-    final index = _events.indexWhere((element) => element.id == eventId);
+    try {
+      final docRef = _firestore.collection('events').doc(eventId);
+      await docRef.update({'note': note});
 
-    _events[index].note = note;
-    notifyListeners();
-
-    // update note in firebase now
-    if (_events[index].id != null) {
-      await FirebaseFirestore.instance
-          .collection('events')
-          .doc(_events[index].id)
-          .update({'note': note});
-    } else {
-      print('Error: Firebase ID is null for event ${_events[index].id}');
+      final index = _events.indexWhere((e) => e.id == eventId);
+      if (index != -1) {
+        _events[index].note = note;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error updating note: $e');
+      throw e;
     }
   }
 
@@ -275,6 +274,9 @@ class EventProvider extends ChangeNotifier {
     String eventId, {
     String? title,
     DateTime? startTime,
+    DateTime? endTime,
+    String? description,
+    bool? isRecurring,
   }) async {
     try {
       final docRef = _firestore.collection('events').doc(eventId);
@@ -282,6 +284,9 @@ class EventProvider extends ChangeNotifier {
       Map<String, dynamic> updates = {};
       if (title != null) updates['title'] = title;
       if (startTime != null) updates['startTime'] = startTime.toIso8601String();
+      if (endTime != null) updates['endTime'] = endTime.toIso8601String();
+      if (description != null) updates['description'] = description;
+      if (isRecurring != null) updates['isRecurring'] = isRecurring;
 
       await docRef.update(updates);
 
@@ -293,10 +298,10 @@ class EventProvider extends ChangeNotifier {
         final updatedEventData = CalendarEventData(
           title: title ?? event.event.title,
           date: event.event.date,
+          endDate: event.event.endDate,
           startTime: startTime ?? event.event.startTime,
-          endTime: event.event.endTime,
-          description: event.event.description,
-          // Copy any other existing properties you need to preserve
+          endTime: endTime ?? event.event.endTime,
+          description: description ?? event.event.description,
         );
 
         // Update the event with the new CalendarEventData
@@ -311,7 +316,7 @@ class EventProvider extends ChangeNotifier {
           dayStreak: event.dayStreak,
           monthStreak: event.monthStreak,
           yearStreak: event.yearStreak,
-          isRecurring: event.isRecurring,
+          isRecurring: isRecurring ?? event.isRecurring,
           isReminder: event.isReminder,
           lastCompletedDate: event.lastCompletedDate,
           isArchived: event.isArchived,

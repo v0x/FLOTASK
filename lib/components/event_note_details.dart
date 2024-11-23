@@ -18,9 +18,8 @@ class EventDetailWithNotes extends StatefulWidget {
 
 class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
   TextEditingController _noteController = TextEditingController();
-
-// way to initialize an event and set it to the GLOBAL event provider
   late EventModel event;
+
   @override
   void initState() {
     super.initState();
@@ -29,56 +28,154 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
   }
 
   @override
+  void dispose() {
+    if (_noteController.text != event.note) {
+      final eventProvider = context.read<EventProvider>();
+      eventProvider.updateNote(event.id!, _noteController.text);
+      event.note = _noteController.text;
+    }
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(event.event.title),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+      backgroundColor: const Color(0xFFEBEAE3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFEBEAE3),
+        elevation: 0,
+        title: Text(
+          event.event.title,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        body: Column(
-          children: [
-            Text(
-                'Start Time: ${DateFormat('h:mm a').format(event.event.startTime!)}'),
-            Text(
-                'End Time: ${DateFormat('h:mm a').format(event.event.endTime!)}'),
-            Text(
-                'Start Date: ${DateFormat('MM-dd-yyy').format(event.event.date)}'),
-            Text(
-                'End Date: ${DateFormat('MM-dd-yyyy').format(event.event.endDate!)}'),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: MarkdownAutoPreview(
-                  controller: _noteController,
-                  emojiConvert: true,
-                  enableToolBar: true,
-                  toolbarBackground: Colors.blue,
-                  expandableBackground: Colors.blue[200],
-                  maxLines: 9,
-                  decoration: InputDecoration(border: OutlineInputBorder()),
-                  hintText: event.note,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Event Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, color: Colors.blue[700]),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${DateFormat('h:mm a').format(event.event.startTime!)} - ${DateFormat('h:mm a').format(event.event.endTime!)}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, color: Colors.green[700]),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${DateFormat('MMM dd, yyyy').format(event.event.date)} - ${DateFormat('MMM dd, yyyy').format(event.event.endDate!)}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      if (event.isRecurring) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.repeat, color: Colors.orange[700]),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Recurring Task - Streak: ${event.dayStreak} days',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            ElevatedButton(
-              // update event global provider to update note
-              onPressed: () {
-                setState(() {
-                  context
-                      .read<EventProvider>()
-                      .updateNote(event.id!, _noteController.text);
-
-                  Navigator.pop(context);
-                });
-              },
-              child: Text("Save Note"),
-            ),
-          ],
-        ));
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Notes',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final eventProvider =
+                                  context.read<EventProvider>();
+                              eventProvider.updateNote(
+                                  event.id!, _noteController.text);
+                              event.note = _noteController.text;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Note saved')),
+                              );
+                            },
+                            icon: const Icon(Icons.save),
+                            label: const Text('Save'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEBEAE3),
+                              foregroundColor: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      MarkdownAutoPreview(
+                        controller: _noteController,
+                        emojiConvert: true,
+                        enableToolBar: true,
+                        toolbarBackground: const Color(0xFFEBEAE3),
+                        expandableBackground: Colors.white,
+                        maxLines: 12,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          fillColor: Colors.white,
+                          filled: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

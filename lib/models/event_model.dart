@@ -2,14 +2,14 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Model class for a user-created event; used globally for every feature
+// Model class for a user-created event, used globally for every feature
 class EventModel {
   String? id;
+  final DocumentReference? ref;
   CalendarEventData event;
-  DocumentReference? ref;
   String? note;
-  List<String>? tags;
-  String? category;
+  final List<String>? tags;
+  final String? category;
 
 // default type of task for user; for notifications
   bool isReminder;
@@ -31,19 +31,20 @@ class EventModel {
 // for archive list functionality
   bool isArchived;
 
-  EventModel(
-      {required this.event,
-      this.id,
-      this.ref,
-      this.note,
-      this.tags,
-      this.category = "Home",
-      this.isCompleted = false,
-      this.dayStreak = 0,
-      this.monthStreak = 0,
-      this.yearStreak = 0,
-      this.isRecurring = false,
-      this.isReminder = true,
-      this.lastCompletedDate,
-      this.isArchived = false});
+  EventModel({
+    this.id,
+    this.ref,
+    required this.event,
+    this.note,
+    this.tags,
+    this.category,
+    this.isCompleted = false,
+    this.dayStreak = 0,
+    this.monthStreak = 0,
+    this.yearStreak = 0,
+    this.isRecurring = false,
+    this.isReminder = false,
+    this.lastCompletedDate,
+    this.isArchived = false,
+  });
 }

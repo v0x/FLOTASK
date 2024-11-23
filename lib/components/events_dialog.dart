@@ -13,11 +13,17 @@ class EventDialog extends StatefulWidget {
   final EventController eventController;
   final DateTime? longPressDate;
   final DateTime? longPressEndDate;
-  const EventDialog(
-      {required this.eventController,
-      this.longPressDate,
-      this.longPressEndDate,
-      super.key});
+  final bool isEditing;
+  final EventModel? existingEvent;
+
+  const EventDialog({
+    required this.eventController,
+    this.longPressDate,
+    this.longPressEndDate,
+    this.isEditing = false,
+    this.existingEvent,
+    super.key,
+  });
 
   @override
   State<EventDialog> createState() => _EventDialogState();
@@ -33,22 +39,63 @@ class _EventDialogState extends State<EventDialog> {
 
   TimeOfDay _startTime = TimeOfDay.now();
   TimeOfDay _endTime = TimeOfDay.now();
-
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-
   bool _isRecurring = false;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.isEditing && widget.existingEvent != null) {
+      final event = widget.existingEvent!;
+      _eventTitleController.text = event.event.title;
+      _descController.text = event.event.description ?? '';
+      _isRecurring = event.isRecurring;
 
-    // Set the initial start date if provided
-    if (widget.longPressDate != null) {
+      _startDate = event.event.date;
+      _endDate = event.event.endDate;
+      _startDateController.text = DateFormat.yMMMd().format(_startDate);
+      _endDateController.text = DateFormat.yMMMd().format(_endDate);
+
+      if (event.event.startTime != null) {
+        _startTime = TimeOfDay.fromDateTime(event.event.startTime!);
+      }
+      if (event.event.endTime != null) {
+        _endTime = TimeOfDay.fromDateTime(event.event.endTime!);
+      }
+    } else if (widget.longPressDate != null) {
       _startDate = widget.longPressDate!;
       _startDateController.text =
           DateFormat.yMMMd().format(widget.longPressDate!);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      if (widget.isEditing && widget.existingEvent != null) {
+        if (widget.existingEvent!.event.startTime != null) {
+          _startTimeController.text = _startTime.format(context);
+        }
+        if (widget.existingEvent!.event.endTime != null) {
+          _endTimeController.text = _endTime.format(context);
+        }
+      }
+      _initialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _eventTitleController.dispose();
+    _startDateController.dispose();
+    _endDateController.dispose();
+    _startTimeController.dispose();
+    _endTimeController.dispose();
+    _descController.dispose();
+    super.dispose();
   }
 
   @override
@@ -162,13 +209,27 @@ class _EventDialogState extends State<EventDialog> {
                     ),
                   );
 
-                  widget.eventController.add(event);
+                  final eventProvider = context.read<EventProvider>();
 
-                  eventProvider.addEvent(event,
+                  if (widget.isEditing && widget.existingEvent != null) {
+                    eventProvider.updateEventDetails(
+                      widget.existingEvent!.id!,
+                      title: _eventTitleController.text,
+                      startTime: event.startTime,
+                      endTime: event.endTime,
+                      description: _descController.text,
+                      isRecurring: _isRecurring,
+                    );
+                  } else {
+                    widget.eventController.add(event);
+                    eventProvider.addEvent(
+                      event,
                       note: "Some notes",
                       tags: ["work"],
-                      isRecurring: _isRecurring);
-                  print(eventProvider);
+                      isRecurring: _isRecurring,
+                    );
+                  }
+
                   Navigator.of(context).pop();
                 },
                 child: Text("Submit"))

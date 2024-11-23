@@ -6,6 +6,7 @@ import 'package:flotask/models/event_provider.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:provider/provider.dart';
 import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/components/events_dialog.dart';
 
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});
@@ -60,58 +61,50 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
   Future<void> _saveGoal() async {
     final goalTitle = _titleController.text;
+    final eventProvider = context.read<EventProvider>();
 
     if (goalTitle.isNotEmpty && _tasks.isNotEmpty) {
-      final goalRef = FirebaseFirestore.instance.collection('goals').doc();
+      // Create the main goal event
+      final goalEvent = CalendarEventData(
+        title: goalTitle,
+        date: _startDate!,
+        endDate: _endDate!,
+        description: _noteController.text,
+      );
 
-      int totalTaskRecurrences = 0; //store the sum of all task recurrences
+      // Add the goal as an event
+      await eventProvider.addEvent(
+        goalEvent,
+        note: _noteController.text,
+        tags: [_categoryController.text],
+        isRecurring: false,
+      );
 
-      await goalRef.set({
-        'title': goalTitle,
-        'category': _categoryController.text,
-        'note': _noteController.text,
-        'startDate':
-            _startDate != null ? Timestamp.fromDate(_startDate!) : null,
-        'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
-        'createdAt': FieldValue.serverTimestamp(),
-        'totalTaskCompletedRecurrences': 0,
-      });
-
+      // Add each task as a sub-event
       for (final taskData in _tasks) {
-        if (taskData['startDate'] != null &&
-            taskData['endDate'] != null &&
-            taskData['repeatInterval'] != null) {
-          List<DateTime> recurrences = _generateRecurringDates(
-            taskData['startDate'],
-            taskData['endDate'],
-            taskData['repeatInterval'],
-          );
+        final taskEvent = CalendarEventData(
+          title: taskData['task'],
+          date: taskData['startDate'],
+          endDate: taskData['endDate'],
+          description: 'Task for goal: $goalTitle',
+          startTime: taskData['selectedTime'] != null
+              ? DateTime(
+                  taskData['startDate'].year,
+                  taskData['startDate'].month,
+                  taskData['startDate'].day,
+                  int.parse(taskData['selectedTime'].split(':')[0]),
+                  int.parse(taskData['selectedTime'].split(':')[1]),
+                )
+              : null,
+        );
 
-          final taskRef = await goalRef.collection('tasks').add({
-            'task': taskData['task'],
-            'repeatInterval': taskData['repeatInterval'],
-            'startDate': Timestamp.fromDate(taskData['startDate']),
-            'endDate': Timestamp.fromDate(taskData['endDate']),
-            'selectedTime': taskData['selectedTime'],
-            'status': 'todo',
-            'totalRecurrences': recurrences.length,
-            'totalCompletedRecurrences': 0,
-          });
-          totalTaskRecurrences += recurrences.length;
-
-          for (DateTime date in recurrences) {
-            await taskRef.collection('recurrences').add({
-              'date': Timestamp.fromDate(date),
-              'status': 'todo',
-            });
-          }
-        }
+        await eventProvider.addEvent(
+          taskEvent,
+          note: 'Part of goal: $goalTitle',
+          tags: [_categoryController.text],
+          isRecurring: taskData['repeatInterval'] > 0,
+        );
       }
-
-      // Update the goal with the totalTaskRecurrences after all tasks are added
-      await goalRef.update({
-        'totalTaskRecurrences': totalTaskRecurrences,
-      });
 
       // Clear data after saving
       _titleController.clear();
@@ -120,9 +113,9 @@ class _AddGoalPageState extends State<AddGoalPage> {
       _noteController.clear();
       setState(() {
         _isGoalComplete = false;
+        _startDate = null;
+        _endDate = null;
       });
-
-      print('Goal and tasks saved to Firestore');
 
       Navigator.pushReplacement(
         context,
@@ -135,27 +128,37 @@ class _AddGoalPageState extends State<AddGoalPage> {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please select start and end dates for the goal.')),
+          content: Text('Please select start and end dates for the goal.'),
+        ),
       );
       return;
     }
 
-    final newTask = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddTaskPage(
-          goalStartDate: _startDate!,
-          goalEndDate: _endDate!,
-        ),
+    await showDialog(
+      context: context,
+      builder: (context) => EventDialog(
+        eventController: EventController(),
+        longPressDate: _startDate,
+        longPressEndDate: _endDate,
       ),
     );
 
-    if (newTask != null) {
-      setState(() {
-        _tasks.add(newTask);
-        _checkIfGoalIsComplete();
+    // The task will be added to the EventProvider automatically
+    // We just need to update our local state
+    final eventProvider = context.read<EventProvider>();
+    final latestEvent = eventProvider.events.last;
+
+    setState(() {
+      _tasks.add({
+        'task': latestEvent.event.title,
+        'startDate': latestEvent.event.date,
+        'endDate': latestEvent.event.endDate,
+        'repeatInterval': latestEvent.isRecurring ? 1 : 0,
+        'selectedTime': latestEvent.event.startTime != null
+            ? '${latestEvent.event.startTime!.hour}:${latestEvent.event.startTime!.minute}'
+            : null,
       });
-    }
+    });
   }
 
   @override

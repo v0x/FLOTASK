@@ -6,6 +6,10 @@ import 'package:flotask/models/event_provider.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:provider/provider.dart';
 import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/components/events_dialog.dart';
+import 'package:intl/intl.dart';
+import 'package:flotask/components/event_note_details.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 //stateful widget for the Taskpage
 class TaskPage extends StatefulWidget {
@@ -59,10 +63,9 @@ class _TaskPageState extends State<TaskPage>
   Widget _buildTaskList(String status) {
     return Consumer<EventProvider>(
       builder: (context, eventProvider, child) {
-        // Filter events based on completion status only
         final filteredEvents = eventProvider.events.where((event) {
           final eventStatus = event.isCompleted ? 'completed' : 'todo';
-          return eventStatus == status;
+          return eventStatus == status && !event.isArchived;
         }).toList();
 
         if (filteredEvents.isEmpty) {
@@ -74,29 +77,87 @@ class _TaskPageState extends State<TaskPage>
           itemBuilder: (context, index) {
             final event = filteredEvents[index];
 
-            return ListTile(
-              leading: Checkbox(
-                value: event.isCompleted,
-                onChanged: (bool? value) async {
-                  if (value != null) {
-                    await eventProvider.toggleComplete(event.id!, value);
-                  }
-                },
-              ),
-              title: Text(event.event.title),
-              subtitle: Text(
-                'Time: ${event.event.startTime != null ? TimeOfDay.fromDateTime(event.event.startTime!).format(context) : 'Any time'}',
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+            return Slidable(
+              endActionPane: ActionPane(
+                motion: const ScrollMotion(),
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      _editTask(event);
+                  SlidableAction(
+                    flex: 2,
+                    onPressed: (context) {
+                      // Archive the event
+                      context
+                          .read<EventProvider>()
+                          .updateArchivedStatus(event.id!, false);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('${event.event.title} archived')),
+                      );
                     },
+                    backgroundColor: const Color(0xFF7BC043),
+                    foregroundColor: Colors.white,
+                    icon: Icons.archive,
+                    label: 'Archive',
                   ),
                 ],
+              ),
+              child: ListTile(
+                leading: Checkbox(
+                  value: event.isCompleted,
+                  onChanged: (bool? value) async {
+                    if (value != null) {
+                      await eventProvider.toggleComplete(event.id!, value);
+                    }
+                  },
+                ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        event.event.title,
+                        style: TextStyle(
+                          decoration: event.isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                    if (event.isRecurring)
+                      const Text(
+                        '🔄', // Recurring emoji
+                        style: TextStyle(fontSize: 16),
+                      ),
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${DateFormat('MMM dd, yyyy').format(event.event.date)}',
+                    ),
+                    Text('${event.event.startTime != null ? '${TimeOfDay.fromDateTime(event.event.startTime!).format(context)} - '
+                        '${event.event.endTime != null ? TimeOfDay.fromDateTime(event.event.endTime!).format(context) : ''}' : 'Any time'}'),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        _editTask(event);
+                      },
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EventDetailWithNotes(event: event),
+                    ),
+                  );
+                },
               ),
             );
           },
@@ -108,105 +169,20 @@ class _TaskPageState extends State<TaskPage>
   //work review3
   // Function to edit a task
   Future<void> _editTask(EventModel event) async {
-    final TextEditingController _taskController =
-        TextEditingController(text: event.event.title);
-
-    TimeOfDay? initialTime;
-    if (event.event.startTime != null) {
-      initialTime = TimeOfDay.fromDateTime(event.event.startTime!);
-    }
-
-    setState(() {
-      _selectedTime = initialTime;
-    });
-
-    String _selectedOption =
-        _selectedTime != null ? 'Specific time' : 'Any time';
+    final eventController = EventController()..addAll([event.event]);
 
     await showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Edit Task'),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _taskController,
-                      decoration: const InputDecoration(
-                        labelText: 'Task Name',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-
-                    // Time Selection
-                    const Text(
-                      'Time',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Time:'),
-                        DropdownButton<String>(
-                          value: _selectedOption,
-                          items: <String>['Any time', 'Specific time']
-                              .map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedOption = newValue!;
-                              if (newValue == 'Specific time') {
-                                _selectTime(context, setState, _selectedTime);
-                              } else {
-                                _selectedTime = null;
-                              }
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-
-                    // Display the selected time if specific time is chosen
-                    if (_selectedOption == 'Specific time' &&
-                        _selectedTime != null)
-                      Text('Selected Time: ${_selectedTime!.format(context)}'),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () async {
-                    final eventProvider = context.read<EventProvider>();
-                    await eventProvider.updateEventDetails(
-                      event.id!,
-                      title: _taskController.text,
-                      startTime: _selectedTime != null
-                          ? DateTime(
-                              event.event.date.year,
-                              event.event.date.month,
-                              event.event.date.day,
-                              _selectedTime!.hour,
-                              _selectedTime!.minute,
-                            )
-                          : null,
-                    );
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Save Changes'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (BuildContext dialogContext) => Provider<EventController>(
+        create: (context) => eventController,
+        child: EventDialog(
+          eventController: eventController,
+          longPressDate: event.event.date,
+          longPressEndDate: event.event.endDate,
+          isEditing: true,
+          existingEvent: event,
+        ),
+      ),
     );
   }
 
@@ -241,7 +217,7 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
-  // Add this method to create an event from a task
+  // create an event from a task
   Future<void> _createEventFromTask(String taskName, DateTime startDate,
       DateTime endDate, String? selectedTime) async {
     final eventData = CalendarEventData(
@@ -274,7 +250,6 @@ class _TaskPageState extends State<TaskPage>
         );
   }
 
-  // Add this method
   Future<void> _selectTime(BuildContext context, StateSetter setDialogState,
       TimeOfDay? currentTime) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -297,7 +272,7 @@ class _TaskPageState extends State<TaskPage>
           appBar: AppBar(
             title: Center(
               child: Text(
-                "Daily tasks", //page title
+                "Daily tasks",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -305,11 +280,119 @@ class _TaskPageState extends State<TaskPage>
               ),
             ),
             backgroundColor: const Color(0xFFEBEAE3),
+            actions: [
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
+              ),
+            ],
             bottom: TabBar(
               controller: _tabController,
               tabs: const [
                 Tab(text: 'To-do'),
                 Tab(text: 'Completed'),
+              ],
+            ),
+          ),
+
+          // archive list side drawer
+          endDrawer: Drawer(
+            child: Column(
+              children: <Widget>[
+                Container(
+                  color: const Color(0xFFEBEAE3),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.archive, color: Colors.black, size: 30),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Archived Tasks',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Consumer<EventProvider>(
+                    builder: (context, eventProvider, child) {
+                      final archivedEvents = eventProvider.events
+                          .where((element) => element.isArchived)
+                          .toList();
+
+                      return ListView.builder(
+                        itemCount: archivedEvents.length,
+                        itemBuilder: (context, index) {
+                          final archivedEvent = archivedEvents[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            elevation: 4,
+                            child: Slidable(
+                              endActionPane: ActionPane(
+                                motion: const ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    flex: 2,
+                                    onPressed: (context) {
+                                      context
+                                          .read<EventProvider>()
+                                          .updateArchivedStatus(
+                                              archivedEvent.id!, true);
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                '${archivedEvent.event.title} unarchived')),
+                                      );
+                                    },
+                                    backgroundColor: const Color(0xFF7BC043),
+                                    foregroundColor: Colors.white,
+                                    icon: Icons.unarchive,
+                                    label: 'Unarchive',
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                title: Text(
+                                  archivedEvent.event.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}',
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          EventDetailWithNotes(
+                                              event: archivedEvent),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
           ),
