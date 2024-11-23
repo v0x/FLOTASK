@@ -1,10 +1,12 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Model class for a user-created event; used globally for every feature
 class EventModel {
   String? id;
   CalendarEventData event;
+  DocumentReference? ref;
   String? note;
   List<String>? tags;
   String? category;
@@ -32,6 +34,7 @@ class EventModel {
   EventModel(
       {required this.event,
       this.id,
+      this.ref,
       this.note,
       this.tags,
       this.category = "Home",

@@ -18,15 +18,14 @@ class EventProvider extends ChangeNotifier {
   // Load events from Firebase
   Future<void> loadEventsFromFirebase() async {
     try {
-      FirebaseFirestore firestore = FirebaseFirestore.instance;
-      QuerySnapshot snapshot = await firestore.collection('events').get();
+      QuerySnapshot snapshot = await _firestore.collection('events').get();
 
       _events = snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-        // Create EventModel from Firebase data with null checks
         return EventModel(
           id: doc.id,
+          ref: doc.reference,
           event: CalendarEventData(
             title: data['title'] as String? ?? 'Untitled Event',
             date: data['startDate'] != null
@@ -55,7 +54,8 @@ class EventProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Error loading events from Firebase: $e');
+      print('Error loading events: $e');
+      throw e;
     }
   }
 
@@ -269,5 +269,59 @@ class EventProvider extends ChangeNotifier {
     });
 
     notifyListeners();
+  }
+
+  Future<void> updateEventDetails(
+    String eventId, {
+    String? title,
+    DateTime? startTime,
+  }) async {
+    try {
+      final docRef = _firestore.collection('events').doc(eventId);
+
+      Map<String, dynamic> updates = {};
+      if (title != null) updates['title'] = title;
+      if (startTime != null) updates['startTime'] = startTime.toIso8601String();
+
+      await docRef.update(updates);
+
+      // Update local state
+      final index = _events.indexWhere((e) => e.id == eventId);
+      if (index != -1) {
+        final event = _events[index];
+        // Create new CalendarEventData with updated values
+        final updatedEventData = CalendarEventData(
+          title: title ?? event.event.title,
+          date: event.event.date,
+          startTime: startTime ?? event.event.startTime,
+          endTime: event.event.endTime,
+          description: event.event.description,
+          // Copy any other existing properties you need to preserve
+        );
+
+        // Update the event with the new CalendarEventData
+        _events[index] = EventModel(
+          id: event.id,
+          ref: event.ref,
+          event: updatedEventData,
+          note: event.note,
+          tags: event.tags,
+          category: event.category,
+          isCompleted: event.isCompleted,
+          dayStreak: event.dayStreak,
+          monthStreak: event.monthStreak,
+          yearStreak: event.yearStreak,
+          isRecurring: event.isRecurring,
+          isReminder: event.isReminder,
+          lastCompletedDate: event.lastCompletedDate,
+          isArchived: event.isArchived,
+        );
+
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error updating event: $e');
+      throw e;
+    }
   }
 }
