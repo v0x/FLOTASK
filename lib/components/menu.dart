@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 class Menu extends StatelessWidget {
+  final ScreenshotController screenshotController; // Accept ScreenshotController as a parameter
+
+  Menu({required this.screenshotController}); // Constructor to initialize screenshotController
+
   @override
   Widget build(BuildContext context) {
     final safeArea = EdgeInsets.only(top: MediaQuery.of(context).viewPadding.top);
@@ -29,7 +36,7 @@ class Menu extends StatelessWidget {
                     buildMenuItem(
                       icon: Icons.share,
                       title: 'Share',
-                      onTap: () => print('Share clicked'),
+                      onTap: () => _shareProgress(context), // Call the share function
                     ),
                     buildMenuItem(
                       icon: Icons.book,
@@ -81,5 +88,20 @@ class Menu extends StatelessWidget {
         onTap: onTap, // Executes action when menu item is tapped
       ),
     );
+  }
+
+  // Function to capture and share progress
+  void _shareProgress(BuildContext context) async {
+    try {
+      final image = await screenshotController.capture();
+      if (image != null) {
+        await Share.shareXFiles([XFile.fromData(image, name: 'garden.png')], text: 'Check out my garden progress!');
+      }
+    } catch (e) {
+      print('Error capturing or sharing progress: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sharing your progress. Please try again.')),
+      );
+    }
   }
 }

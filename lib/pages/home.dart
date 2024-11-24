@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'package:flotask/components/menu.dart';
 import 'dart:async';
+import 'package:screenshot/screenshot.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class _HomePageState extends State<HomePage> {
   late Timer _timer;
   int _currentStage = 0;
   SMIInput<double>? _growInput;
+  final ScreenshotController _screenshotController = ScreenshotController(); // Screenshot controller
 
   @override
   void initState() {
@@ -69,7 +71,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Menu(),
+      drawer: Menu(screenshotController: _screenshotController), // Pass ScreenshotController
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFE6E6),
         elevation: 0,
@@ -84,14 +86,17 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          RiveAnimation.asset(
-            'assets/growing_plant.riv',
-            fit: BoxFit.cover,
-            onInit: _onRiveInit,
-          ),
-        ],
+      body: Screenshot(
+        controller: _screenshotController, // Wrap content with Screenshot widget
+        child: Stack(
+          children: [
+            RiveAnimation.asset(
+              'assets/growing_plant.riv',
+              fit: BoxFit.cover,
+              onInit: _onRiveInit,
+            ),
+          ],
+        ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 20),
