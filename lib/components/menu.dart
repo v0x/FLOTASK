@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:typed_data'; // Import for Uint8List
 
 class Menu extends StatelessWidget {
   final ScreenshotController screenshotController; // Accept ScreenshotController as a parameter
@@ -93,9 +93,14 @@ class Menu extends StatelessWidget {
   // Function to capture and share progress
   void _shareProgress(BuildContext context) async {
     try {
-      final image = await screenshotController.capture();
+      final image = await screenshotController.capture(); // Capture the screenshot
       if (image != null) {
-        await Share.shareXFiles([XFile.fromData(image, name: 'garden.png')], text: 'Check out my garden progress!');
+        // Show the preview dialog with the captured image
+        _showPreviewDialog(context, image);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not capture the flower animation. Please try again.')),
+        );
       }
     } catch (e) {
       print('Error capturing or sharing progress: $e');
@@ -103,5 +108,64 @@ class Menu extends StatelessWidget {
         SnackBar(content: Text('Error sharing your progress. Please try again.')),
       );
     }
+  }
+
+  // Dialog to show the preview of the captured image
+  void _showPreviewDialog(BuildContext context, Uint8List image) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+          title: Text(
+            'Share Your Garden',
+            style: TextStyle(color: Colors.black.withOpacity(0.8)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12.0),
+                child: Image.memory(
+                  image,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Here’s your garden progress! Share it with your friends!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black.withOpacity(0.7)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.red.withOpacity(0.8)),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Proceed to share the image
+                await Share.shareXFiles(
+                  [XFile.fromData(image, name: 'garden.png')],
+                  text: 'Check out my garden progress!',
+                );
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text(
+                'Share',
+                style: TextStyle(color: Colors.green.withOpacity(0.8)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
