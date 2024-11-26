@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatelessWidget {
   @override
@@ -54,13 +54,7 @@ class SettingsPage extends StatelessWidget {
                       buildSettingsItem(
                         title: 'About App',
                         icon: Icons.info_outline,
-                        onTap: () => showAboutDialog(
-                          context: context,
-                          applicationName: 'Your App Name',
-                          applicationVersion: '1.0.0',
-                          applicationIcon: Icon(Icons.info_outline),
-                          children: [Text("This is a sample app to showcase settings functionality.")],
-                        ),
+                        onTap: () => showAboutDialogModified(context),
                       ),
                     ],
                   ),
@@ -152,106 +146,206 @@ class AccountPage extends StatelessWidget {
   }
 }
 
-// App Preferences Page for settings like font size and language
-class AppPreferencesPage extends StatefulWidget {
-  @override
-  _AppPreferencesPageState createState() => _AppPreferencesPageState();
-}
+// App Preferences Page with Feedback and Report Issue forms
+class AppPreferencesPage extends StatelessWidget {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
 
-class _AppPreferencesPageState extends State<AppPreferencesPage> {
-  String _selectedFontSize = 'Medium';
-  String _selectedLanguage = 'English';
+  // Function to save feedback to Firestore
+  Future<void> _saveFeedback(BuildContext context) async {
+    final email = _emailController.text.trim();
+    final message = _messageController.text.trim();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPreferences(); // Load saved preferences when the page is initialized
+    if (message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a message.')));
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('feedback').add({
+        'email': email,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Feedback submitted successfully!')));
+      _emailController.clear();
+      _messageController.clear();
+      Navigator.pop(context);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit feedback. Please try again.')));
+    }
   }
 
-  // Load saved preferences for font size and language
-  Future<void> _loadPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedFontSize = prefs.getString('fontSize') ?? 'Medium'; // Default to 'Medium'
-      _selectedLanguage = prefs.getString('language') ?? 'English'; // Default to 'English'
-    });
-  }
+  // Function to save issues to Firestore
+  Future<void> _saveIssue(BuildContext context) async {
+    final email = _emailController.text.trim();
+    final message = _messageController.text.trim();
 
-  // Save the selected font size
-  Future<void> _saveFontSize(String fontSize) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('fontSize', fontSize);
-  }
+    if (message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a message.')));
+      return;
+    }
 
-  // Save the selected language
-  Future<void> _saveLanguage(String language) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', language);
+    try {
+      await FirebaseFirestore.instance.collection('issues').add({
+        'email': email,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Issue reported successfully!')));
+      _emailController.clear();
+      _messageController.clear();
+      Navigator.pop(context);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to report issue. Please try again.')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Apply the selected font size to the text style
-    double fontSize = _getFontSize();
     return Scaffold(
       appBar: AppBar(title: Text('App Preferences')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Font Size Selection
+          // Send Feedback option
           ListTile(
-            leading: Icon(Icons.text_fields, color: Color(0xFF8D6E63)),
-            title: Text('Font Size', style: TextStyle(fontSize: fontSize)),
-            trailing: DropdownButton<String>(
-              value: _selectedFontSize,
-              items: ['Small', 'Medium', 'Large'].map((value) {
-                return DropdownMenuItem(value: value, child: Text(value));
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedFontSize = newValue!;
-                  _saveFontSize(newValue); // Save the selected font size
-                });
-              },
-            ),
+            leading: Icon(Icons.feedback_outlined, color: Color(0xFF8D6E63)),
+            title: Text('Send Feedback'),
+            onTap: () => _showForm(context, 'Feedback', _saveFeedback),
           ),
           const Divider(),
-          // Language Selection
+
+          // Report Issue option
           ListTile(
-            leading: Icon(Icons.language, color: Color(0xFF8D6E63)),
-            title: Text('App Language', style: TextStyle(fontSize: fontSize)),
-            trailing: DropdownButton<String>(
-              value: _selectedLanguage,
-              items: ['English', 'Spanish', 'French'].map((value) {
-                return DropdownMenuItem(value: value, child: Text(value));
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedLanguage = newValue!;
-                  _saveLanguage(newValue); // Save the selected language
-                });
-              },
-            ),
+            leading: Icon(Icons.bug_report_outlined, color: Color(0xFF8D6E63)),
+            title: Text('Report Issue'),
+            onTap: () => _showForm(context, 'Issue', _saveIssue),
           ),
         ],
       ),
     );
   }
 
-  // Method to get font size based on user selection
-  double _getFontSize() {
-    switch (_selectedFontSize) {
-      case 'Small':
-        return 14.0;
-      case 'Large':
-        return 20.0;
-      default:
-        return 16.0;
-    }
+  // Function to show form for feedback or reporting an issue
+  void _showForm(BuildContext context, String type, Future<void> Function(BuildContext) saveFunction) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Submit $type',
+            style: TextStyle(color: Color(0xFF8D6E63), fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: const Color(0xFFF5F5F5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Your Email (optional)',
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF8D6E63)),
+                  ),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  labelText: 'Your $type',
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF8D6E63)),
+                  ),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF8D6E63)),
+              ),
+              onPressed: () {
+                _emailController.clear();
+                _messageController.clear();
+                Navigator.pop(context);
+              },
+            ),
+            ElevatedButton(
+              child: Text(
+                'Submit',
+                style: TextStyle(color: Colors.black), // Submit button text is black
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF8D6E63), // Matches app theme
+              ),
+              onPressed: () => saveFunction(context),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
-// Notification Settings Page for managing notifications
+// About App dialog modification
+void showAboutDialogModified(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFFF5F5F5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.task, color: Color(0xFF8D6E63), size: 40),
+            const SizedBox(width: 8),
+            Text(
+              'FloTask',
+              style: TextStyle(color: Color(0xFF8D6E63), fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          "FloTask is a task management app designed to help you organize your goals and track progress effectively.",
+          style: TextStyle(color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            child: Text(
+              'View Licenses',
+              style: TextStyle(color: Colors.black), // Black text
+            ),
+            onPressed: () {
+              showLicensePage(context: context, applicationName: 'FloTask');
+            },
+          ),
+          TextButton(
+            child: Text(
+              'Close',
+              style: TextStyle(color: Colors.black), // Black text
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+// Notification Settings Page
 class NotificationSettingsPage extends StatefulWidget {
   @override
   _NotificationSettingsPageState createState() => _NotificationSettingsPageState();
