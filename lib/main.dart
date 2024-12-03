@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/providers/achievement_provider.dart';
 
 // COMPONENTS
 import 'package:flotask/components/notifications.dart';
@@ -20,6 +21,7 @@ import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/achievements.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +56,7 @@ class _MainAppState extends State<MainApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
+        ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -122,6 +125,7 @@ class _BottomNavState extends State<BottomNav> {
         PomodoroPage(),
         ProgressPage(),
         UserProfilePage(),
+        AchievementPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
@@ -142,6 +146,7 @@ class _BottomNavState extends State<BottomNav> {
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
         ],
       ),
     );
