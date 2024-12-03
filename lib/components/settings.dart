@@ -358,7 +358,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Notification Settings')),
+      appBar: AppBar(
+        title: Text('Notification Settings'),
+        backgroundColor: Colors.transparent, // Default or transparent AppBar color
+        elevation: 0, // Flat AppBar
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -369,6 +373,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             trailing: Switch(
               value: _notificationsEnabled,
               onChanged: (value) => setState(() => _notificationsEnabled = value),
+              activeColor: Color(0xFF8D6E63), // Brown for the toggle circle (thumb)
+              activeTrackColor: Colors.grey.shade300, // Neutral gray for the track
+              inactiveThumbColor: Colors.grey, // Gray circle (thumb) when inactive
+              inactiveTrackColor: Colors.grey.shade300, // Neutral gray for the track when inactive
             ),
           ),
           const Divider(),
@@ -379,6 +387,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             trailing: Switch(
               value: _notificationSoundEnabled,
               onChanged: (value) => setState(() => _notificationSoundEnabled = value),
+              activeColor: Color(0xFF8D6E63), // Brown for the toggle circle (thumb)
+              activeTrackColor: Colors.grey.shade300, // Neutral gray for the track
+              inactiveThumbColor: Colors.grey, // Gray circle (thumb) when inactive
+              inactiveTrackColor: Colors.grey.shade300, // Neutral gray for the track when inactive
             ),
           ),
         ],
