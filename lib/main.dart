@@ -46,6 +46,7 @@ class _BottomNavState extends State<BottomNav> {
         const CalendarPage(), // Index 2: Calendar Page
         const PomodoroPage(), // Index 3: Pomodoro Page
         const ProgressPage(), // Index 4: Progress Page
+        NotificationSettingsPage(), // Index 5: Notification Settings Page
       ][currentPageIndex],
 
       // Defines the bottom navigation bar with icons and highlights based on the selected tab.
@@ -77,7 +78,60 @@ class _BottomNavState extends State<BottomNav> {
             icon: Icon(Icons.checklist_rtl_rounded, size: 30),
             label: 'Progress',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications, size: 30),
+            label: 'Settings',
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// Notification Settings Page with Custom Toggle
+class NotificationSettingsPage extends StatefulWidget {
+  @override
+  _NotificationSettingsPageState createState() => _NotificationSettingsPageState();
+}
+
+class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
+  bool _notificationsEnabled = false; // Tracks the toggle state
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Notification Settings'),
+        backgroundColor: Colors.brown.shade700, // Matches the app's theme
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notifications',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.brown.shade700, // Matches the app's theme
+              ),
+            ),
+            SwitchListTile(
+              title: Text('Enable Notifications'),
+              value: _notificationsEnabled,
+              onChanged: (bool value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                });
+              },
+              activeColor: Colors.brown.shade700, // Switch knob color
+              activeTrackColor: Colors.brown.shade300, // Track color
+              inactiveThumbColor: Colors.grey, // Knob color when disabled
+              inactiveTrackColor: Colors.grey.shade300, // Track color when disabled
+            ),
+          ],
+        ),
       ),
     );
   }
