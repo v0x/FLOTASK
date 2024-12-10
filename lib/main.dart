@@ -7,21 +7,34 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/providers/achievement_provider.dart';
 
 // SCREENS
 
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/dailytask.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/achievements.dart';
+import 'package:flotask/pages/map.dart'; 
 
 // TEST voice memos
 import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MainApp());
+}
+
+class MainApp extends StatelessWidget {
+
+  Notifications notifications = Notifications();
+  await notifications.initState();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -33,21 +46,71 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: const Color(0xFFF8F8F8),
+        scaffoldBackgroundColor: const Color(0xFFF8F8F8),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: BottomNav(),
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
+        ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
         home: RootLayout(),
-        theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-                seedColor: Color.fromARGB(255, 235, 216, 182))),
+                  debugShowCheckedModeBanner: false,
+          theme: ThemeData.light().copyWith(
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Color(0xFF8D6E63)), // Set color for large headings
+              // Customize other text styles as needed
+            ),
+          ),
+          darkTheme: ThemeData.dark().copyWith(
+            textTheme: TextTheme(
+              bodyLarge:
+                  TextStyle(color: Colors.white70), // Set color for normal text
+              bodyMedium: TextStyle(
+                  color: Colors.white70), // Set color for smaller text
+              displayLarge: TextStyle(
+                  color: Colors.white), // Set color for large headings
+              // Customize other text styles as needed
+            ),
+          ),
+          themeMode: _isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light, // Conditionally apply the theme
+          //home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+
+          //set the initial page to LoginPage
+          home: LoginPage(),
+          routes: {
+            '/home': (context) =>
+                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+            '/signup': (context) => SignupPage(), //signup page
+          }
       ),
     );
   }
 }
 
 class RootLayout extends StatefulWidget {
+
+  final VoidCallback toggleTheme; // Function to toggle theme
+  final bool isDarkMode; // Pass the theme state
+
+  const BottomNav(
+      {super.key, required this.toggleTheme, required this.isDarkMode});
+
   @override
   _RootLayoutState createState() => _RootLayoutState();
 }
@@ -58,48 +121,64 @@ class _RootLayoutState extends State<RootLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: [
-          HomePage(pageIndex: currentPageIndex),
-          TaskPage(),
-          CalendarPage(),
-          PomodoroPage(),
-          ProgressPage(),
-          UserProfilePage(), // Add UserProfilePage as a screen
-        ][currentPageIndex],
-        bottomNavigationBar: NavigationBar(
-          onDestinationSelected: (int index) {
-            setState(() {
-              currentPageIndex = index;
-            });
-          },
-          selectedIndex: currentPageIndex,
-          indicatorColor: const Color.fromARGB(255, 7, 197, 255),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.task),
-              label: 'Tasks',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_sharp),
-              label: 'Calendar',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.timer_outlined),
-              label: 'Pomodoro',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.checklist_rtl_rounded),
-              label: 'Progress',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person),
-              label: 'Profile', // Add profile icon
-            ),
-          ],
-        ));
+      body: [
+        HomePage(
+            toggleTheme: widget.toggleTheme,
+            isDarkMode: widget.isDarkMode), // Home page with theme toggle
+        TaskPage(),
+        CalendarPage(),
+        PomodoroPage(),
+        ProgressPage(),
+        Category(),
+        UserProfilePage(),
+        AchievementPage(),
+        MapPage(),
+      ][currentPageIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentPageIndex,
+        onTap: (index) => setState(() => currentPageIndex = index),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.brown.shade700,
+        unselectedItemColor: Colors.brown.shade300,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, size: 30),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.task, size: 30),
+            label: 'Task',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today, size: 30),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm, size: 30),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: 'Progress',
+          ),
+              icon: Icon(Icons.calendar_today, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin, size: 30), label: ''),
+        ],
+      ),
+    );
   }
 }

@@ -354,4 +354,24 @@ class EventProvider extends ChangeNotifier {
       throw e;
     }
   }
+
+  // method to archive note
+  void archiveNote(String eventId) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (_events[index].isArchived == false) {
+      _events[index].isArchived = true;
+    }
+    notifyListeners();
+  }
+
+  // method to unarchive note
+  void unarchiveNote(String eventId) {
+    final index = _events.indexWhere((element) => element.id == eventId);
+
+    if (_events[index].isArchived == true) {
+      _events[index].isArchived = false;
+    }
+    notifyListeners();
+  }
 }
