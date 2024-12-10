@@ -52,7 +52,7 @@ class _TaskPageState extends State<TaskPage>
     final today = _formatDate(DateTime.now());
 
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('goals').snapshots(),
+      stream: FirebaseFirestore.instance.collection('events').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

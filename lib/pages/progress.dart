@@ -76,7 +76,6 @@ class _ProgressPageState extends State<ProgressPage> {
                       await _deleteGoal(
                           context, goalRef); // Delete the goal if user confirms
                       Navigator.of(context).pop();
-                      //Navigator.of(context).pop();
                     },
                     child: const Text('Delete'),
                   ),
@@ -196,7 +195,6 @@ class _ProgressPageState extends State<ProgressPage> {
                 child: CircularProgressIndicator()); //show loading indicator
           }
 
-          //final goals = snapshot.data!.docs;
           final goals = snapshot.data!.docs.where((goal) {
             //search bar WR4
             //filter goals based on the search query
