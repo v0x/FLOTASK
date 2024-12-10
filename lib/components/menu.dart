@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flotask/components/resource.dart';
 import 'package:flotask/components/settings.dart';
 
+
 class Menu extends StatelessWidget {
   final VoidCallback toggleTheme; // Add toggle function
   final bool isDarkMode; // Add theme mode state

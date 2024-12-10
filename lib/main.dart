@@ -17,11 +17,13 @@ import 'package:flotask/pages/login.dart';
 import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
+import 'package:flotask/pages/map.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -140,8 +142,10 @@ class _BottomNavState extends State<BottomNav> {
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
+        Category(),
         UserProfilePage(),
         AchievementPage(),
+        MapPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
@@ -180,8 +184,12 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
           BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
+          BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin, size: 30), label: ''),
         ],
       ),
     );
