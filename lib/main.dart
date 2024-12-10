@@ -9,57 +9,61 @@ import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/providers/achievement_provider.dart';
 
-// COMPONENTS
-import 'package:flotask/components/notifications.dart';
-
 // SCREENS
-import 'package:flotask/pages/login.dart';
-import 'package:flotask/pages/signup.dart';
+
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
-import 'package:flotask/pages/task.dart';
+import 'package:flotask/pages/dailytask.dart';
 import 'package:flotask/pages/progress.dart';
-import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
+import 'package:flotask/pages/map.dart'; 
+
+// TEST voice memos
+import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MainApp());
+}
+
+class MainApp extends StatelessWidget {
+
   Notifications notifications = Notifications();
   await notifications.initState();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MainApp()); // Launches the app with MainApp as the root widget
+  runApp(const MainApp());
 }
 
-class MainApp extends StatefulWidget {
+class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
-  _MainAppState createState() => _MainAppState();
-}
-
-class _MainAppState extends State<MainApp> {
-  bool _isDarkMode = false; // Track whether dark mode is enabled
-
-  // Function to toggle the theme
-  void _toggleTheme() {
-    setState(() {
-      _isDarkMode = !_isDarkMode;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: const Color(0xFFF8F8F8),
+        scaffoldBackgroundColor: const Color(0xFFF8F8F8),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: BottomNav(),
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
         ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
-          debugShowCheckedModeBanner: false,
+        home: RootLayout(),
+                  debugShowCheckedModeBanner: false,
           theme: ThemeData.light().copyWith(
             textTheme: TextTheme(
               bodyLarge: TextStyle(
@@ -93,13 +97,14 @@ class _MainAppState extends State<MainApp> {
             '/home': (context) =>
                 BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
             '/signup': (context) => SignupPage(), //signup page
-          }),
+          }
+      ),
     );
   }
 }
 
-// BottomNav is a stateful widget managing the bottom navigation bar.
-class BottomNav extends StatefulWidget {
+class RootLayout extends StatefulWidget {
+
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
@@ -107,11 +112,11 @@ class BottomNav extends StatefulWidget {
       {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
-  _BottomNavState createState() => _BottomNavState();
+  _RootLayoutState createState() => _RootLayoutState();
 }
 
-class _BottomNavState extends State<BottomNav> {
-  int currentPageIndex = 0; // Keeps track of the current tab index
+class _RootLayoutState extends State<RootLayout> {
+  int currentPageIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +129,10 @@ class _BottomNavState extends State<BottomNav> {
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
+        Category(),
         UserProfilePage(),
         AchievementPage(),
+        MapPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
@@ -140,13 +147,36 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
           BottomNavigationBarItem(
+            icon: Icon(Icons.home, size: 30),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.task, size: 30),
+            label: 'Task',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today, size: 30),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm, size: 30),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: 'Progress',
+          ),
               icon: Icon(Icons.calendar_today, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
           BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
+          BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin, size: 30), label: ''),
         ],
       ),
     );

@@ -8,10 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 // the calendar widget to show the MOnth view, Week View, and day view. There are also onTap, onEventTap, and on DateTap functions to route to different pages
-
-import 'package:flotask/main.dart';
-
-
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
@@ -21,7 +17,6 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage>
     with SingleTickerProviderStateMixin {
-
   // to manage tabs
   TabController? tabController;
 
@@ -30,19 +25,33 @@ class _CalendarPageState extends State<CalendarPage>
 
   String selectedPage = '';
 
-
   @override
   void initState() {
     tabController = TabController(length: 3, vsync: this);
     super.initState();
+
+    // Load events from Firebase on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEventsFromFirebase();
+    });
+  }
+
+  void _loadEventsFromFirebase() async {
+    final eventProvider = context.read<EventProvider>();
+    await eventProvider.loadEventsFromFirebase();
+
+    // After loading events from Firebase, add them to the EventController
+    // _eventController.removeWhere((_) => true); // Clear existing events
+    for (var event in eventProvider.events) {
+      _eventController.add(event.event);
+    }
+    setState(() {}); // Trigger a rebuild to reflect the changes
   }
 
   @override
   Widget build(BuildContext context) {
-
     // get the state of the events with this line
     final eventProvider = context.watch<EventProvider>();
-
 
     return Scaffold(
         appBar: AppBar(
@@ -126,7 +135,6 @@ class _CalendarPageState extends State<CalendarPage>
                 ),
               );
             },
-
           ),
           WeekView(
             controller: _eventController,
@@ -181,44 +189,117 @@ class _CalendarPageState extends State<CalendarPage>
         ]),
 
         // action button to show a dialog to input a calendar event
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.add),
-          onPressed: () {
-            showDialog(
+        // floatingActionButton: FloatingActionButton(
+        //   child: const Icon(Icons.add),
+        //   onPressed: () {
+        //     showDialog(
+        //         context: context,
+        //         builder: (BuildContext context) => EventDialog(
+        //               eventController: _eventController,
+        //             ));
+        //   },
+        // ),
+
+        //floating action button to add a new goal
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              //navigate to event dialog when clicking on the button
+              showDialog(
                 context: context,
                 builder: (BuildContext context) => EventDialog(
-                      eventController: _eventController,
-                    ));
-          },
-        ),
-
-        drawer: Drawer(
-          child: ListView(padding: EdgeInsets.zero, children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Notes',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+                  eventController: _eventController,
                 ),
-              ),
+              );
+            },
+            backgroundColor: Colors.black,
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 24,
             ),
-
-            // show list of events in side drawer and add ability to view event details
-            ...eventProvider.events.map((e) => ListTile(
-                  title: Text(e.note.toString()),
-                  onTap: () => {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                EventDetailWithNotes(event: e)))
-                  },
-                ))
-          ]),
+          ),
+        ),
+        drawer: Drawer(
+          child: SafeArea(
+            child: Column(
+              children: <Widget>[
+                Container(
+                  color: const Color(0xFFEBEAE3),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.note_alt_outlined,
+                          color: Colors.black, size: 30),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Notes',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: [
+                      ...eventProvider.events.map((e) => Card(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 16),
+                            elevation: 2,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              title: Text(
+                                e.event.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    e.note?.toString() ?? 'No notes',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy')
+                                        .format(e.event.date),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EventDetailWithNotes(event: e),
+                                  ),
+                                );
+                              },
+                            ),
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ));
   }
 }
