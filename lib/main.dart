@@ -9,19 +9,15 @@ import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/providers/achievement_provider.dart';
 
-// COMPONENTS
-import 'package:flotask/components/notifications.dart';
-
 // SCREENS
-import 'package:flotask/pages/login.dart';
-import 'package:flotask/pages/signup.dart';
+
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
-import 'package:flotask/pages/task.dart';
+import 'package:flotask/pages/dailytask.dart';
 import 'package:flotask/pages/progress.dart';
-import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
 import 'package:flotask/pages/map.dart'; 
 
@@ -39,25 +35,11 @@ class MainApp extends StatelessWidget {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MainApp()); // Launches the app with MainApp as the root widget
+  runApp(const MainApp());
 }
 
-class MainApp extends StatefulWidget {
+class MainApp extends StatelessWidget {
   const MainApp({super.key});
-
-  @override
-  _MainAppState createState() => _MainAppState();
-}
-
-class _MainAppState extends State<MainApp> {
-  bool _isDarkMode = false; // Track whether dark mode is enabled
-
-  // Function to toggle the theme
-  void _toggleTheme() {
-    setState(() {
-      _isDarkMode = !_isDarkMode;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +59,8 @@ class _MainAppState extends State<MainApp> {
         ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
-          debugShowCheckedModeBanner: false,
+        home: RootLayout(),
+                  debugShowCheckedModeBanner: false,
           theme: ThemeData.light().copyWith(
             textTheme: TextTheme(
               bodyLarge: TextStyle(
@@ -111,12 +94,13 @@ class _MainAppState extends State<MainApp> {
             '/home': (context) =>
                 BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
             '/signup': (context) => SignupPage(), //signup page
-          }),
+          }
+      ),
     );
   }
 }
 
-class BottomNav extends StatefulWidget {
+class RootLayout extends StatefulWidget {
 
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
@@ -125,10 +109,10 @@ class BottomNav extends StatefulWidget {
       {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
-  _BottomNavState createState() => _BottomNavState();
+  _RootLayoutState createState() => _RootLayoutState();
 }
 
-class _BottomNavState extends State<BottomNav> {
+class _RootLayoutState extends State<RootLayout> {
   int currentPageIndex = 0;
 
   @override
