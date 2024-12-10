@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   final pageIndex;
-  const HomePage({this.pageIndex, super.key});
+  const HomePage({this.pageIndex, super.key, required VoidCallback toggleTheme, required bool isDarkMode});
 
   @override
   State<HomePage> createState() => _HomePageState();

@@ -9,8 +9,12 @@ import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/providers/achievement_provider.dart';
 
-// SCREENS
+// COMPONENTS
+import 'package:flotask/components/notifications.dart';
 
+// SCREENS
+import 'package:flotask/pages/login.dart';
+import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/category.dart';
@@ -26,44 +30,42 @@ import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MainApp());
-}
-
-class MainApp extends StatelessWidget {
-
   Notifications notifications = Notifications();
   await notifications.initState();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MainApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MainApp());
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
+  _MainAppState createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _isDarkMode = false; // Track whether dark mode is enabled
+
+  // Function to toggle the theme
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFFF8F8F8),
-        scaffoldBackgroundColor: const Color(0xFFF8F8F8),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: BottomNav(),
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
         ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
-        home: RootLayout(),
-                  debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: false,
           theme: ThemeData.light().copyWith(
             textTheme: TextTheme(
               bodyLarge: TextStyle(
@@ -95,11 +97,10 @@ class MainApp extends StatelessWidget {
           home: LoginPage(),
           routes: {
             '/home': (context) =>
-                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+                RootLayout(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
             '/signup': (context) => SignupPage(), //signup page
           }
-      ),
-    );
+    ));
   }
 }
 
@@ -108,7 +109,7 @@ class RootLayout extends StatefulWidget {
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
-  const BottomNav(
+  const RootLayout(
       {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
@@ -166,7 +167,7 @@ class _RootLayoutState extends State<RootLayout> {
             icon: Icon(Icons.checklist_rtl_rounded, size: 30),
             label: 'Progress',
           ),
-              icon: Icon(Icons.calendar_today, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today, size: 30), label: ''),    
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
