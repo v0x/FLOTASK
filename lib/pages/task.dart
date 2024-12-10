@@ -30,7 +30,6 @@ class _TaskPageState extends State<TaskPage> {
   @override
   Widget build(BuildContext context) {
     final eventProvider = context.watch<EventProvider>();
-
     // Separate completed and uncompleted tasks
     final uncompletedTasks = eventProvider.events
         .where((event) => !event.isCompleted && !event.isArchived)
