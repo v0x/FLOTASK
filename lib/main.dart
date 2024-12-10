@@ -21,6 +21,7 @@ import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/map.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -124,6 +125,7 @@ class _BottomNavState extends State<BottomNav> {
         ProgressPage(),
         Category(),
         UserProfilePage(),
+        MapPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
@@ -146,6 +148,8 @@ class _BottomNavState extends State<BottomNav> {
               icon: Icon(Icons.folder, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin, size: 30), label: ''),
         ],
       ),
     );
