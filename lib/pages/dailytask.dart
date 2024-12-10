@@ -85,6 +85,7 @@ class _TaskPageState extends State<TaskPage>
                       stream: task.reference
                           .collection('recurrences')
                           .where('status', isEqualTo: status)
+                          .where('date', isEqualTo: DateTime.parse(today))
                           .snapshots(),
                       builder: (context, recurrenceSnapshot) {
                         if (!recurrenceSnapshot.hasData) {
@@ -92,13 +93,8 @@ class _TaskPageState extends State<TaskPage>
                         }
 
                         //final recurrences = recurrenceSnapshot.data!.docs;
-                        final recurrences = recurrenceSnapshot.data!.docs.where(
-                          (recurrence) {
-                            DateTime recurrenceDate =
-                                (recurrence['date'] as Timestamp).toDate();
-                            return _formatDate(recurrenceDate) == today;
-                          },
-                        );
+                        final recurrences = recurrenceSnapshot.data!.docs;
+
                         if (recurrences.isEmpty) {
                           return const SizedBox.shrink();
                         }

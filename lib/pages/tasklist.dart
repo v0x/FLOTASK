@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'add_task.dart'; // Import AddTaskPage for task adding functionality
 
 class TaskListPage extends StatefulWidget {
   final DocumentSnapshot goal;
@@ -174,7 +173,10 @@ class _TaskListPageState extends State<TaskListPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => _deleteTask(context, taskRef),
+                  onPressed: () async {
+                    await _deleteTask(context, taskRef);
+                    Navigator.of(context).pop();
+                  },
                   child: const Text('Delete'),
                 ),
                 TextButton(
@@ -202,23 +204,6 @@ class _TaskListPageState extends State<TaskListPage> {
     );
   }
 
-  // Function to add a task to the current goal
-  Future<void> _addTask(BuildContext context) async {
-    final newTask = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddTaskPage(
-          goalStartDate: widget.goal['startDate'].toDate(),
-          goalEndDate: widget.goal['endDate'].toDate(),
-        ),
-      ),
-    );
-
-    if (newTask != null) {
-      await widget.goal.reference.collection('tasks').add(newTask);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -228,15 +213,6 @@ class _TaskListPageState extends State<TaskListPage> {
       ),
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              ElevatedButton(
-                onPressed: () => _addTask(context),
-                child: const Text('Add New Task'),
-              ),
-            ],
-          ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: widget.goal.reference.collection('tasks').snapshots(),

@@ -76,7 +76,7 @@ class _ProgressPageState extends State<ProgressPage> {
                       await _deleteGoal(
                           context, goalRef); // Delete the goal if user confirms
                       Navigator.of(context).pop();
-                      Navigator.of(context).pop();
+                      //Navigator.of(context).pop();
                     },
                     child: const Text('Delete'),
                   ),
@@ -128,13 +128,37 @@ class _ProgressPageState extends State<ProgressPage> {
     );
 
     if (confirmation == true) {
-      final taskCollection = goalRef.collection('tasks');
-      final tasks = await taskCollection.get();
-      for (final task in tasks.docs) {
-        await task.reference.delete(); //delete each task in the goal
-      }
+      try {
+        //fatch and delete all tasks in the goal
+        final taskCollection = goalRef.collection('tasks');
+        final taskSnapshots = await taskCollection.get();
+        if (taskSnapshots.docs.isNotEmpty) {
+          for (final task in taskSnapshots.docs) {
+            //fatch and delete all recurrences in rach task
+            final recurrenceCollection =
+                task.reference.collection('recurrences');
+            final recurrenceSnapshots = await recurrenceCollection.get();
+            for (final recurrence in recurrenceSnapshots.docs) {
+              await recurrence.reference.delete(); //delete recurrences
+            }
+            await task.reference
+                .delete(); //delete tasks after deleting recurrences
+          }
+        }
 
-      await goalRef.delete(); //delete the goal itself
+        await goalRef.delete(); //delete the goal itself
+
+        //display a success message of deleting goals
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Goal deleted successfully')),
+        );
+      } catch (e) {
+        //handle any errors that occur during deletion
+        print('error deleting goal: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete goal: $e')),
+        );
+      }
     }
   }
 
@@ -195,19 +219,20 @@ class _ProgressPageState extends State<ProgressPage> {
             itemCount: goals.length,
             itemBuilder: (context, index) {
               final goal = goals[index];
-              //final goalRef = goal.reference;
+              final goalRef = goal.reference;
 
               //calculate goal progress based on completed and toatl recurrences
-              int totalTaskCompletedRecurrences =
+              final int totalTaskCompletedRecurrences =
                   goal['totalTaskCompletedRecurrences'] ?? 0;
-              int totalTaskRecurrences = goal['totalTaskRecurrences'] ?? 0;
-              double goalProgress = totalTaskRecurrences > 0
+              final int totalTaskRecurrences =
+                  goal['totalTaskRecurrences'] ?? 0;
+              final double goalProgress = totalTaskRecurrences > 0
                   ? totalTaskCompletedRecurrences / totalTaskRecurrences
                   : 0;
               //format start and end dates for display
-              String goalStartDate =
+              final String goalStartDate =
                   _formatDate((goal['startDate'] as Timestamp).toDate());
-              String goalEndDate =
+              final String goalEndDate =
                   _formatDate((goal['endDate'] as Timestamp).toDate());
 
               return ListTile(
@@ -218,7 +243,7 @@ class _ProgressPageState extends State<ProgressPage> {
                     Text(goal['title']),
                     IconButton(
                       icon: const Icon(Icons.edit), // Edit icon
-                      onPressed: () => _editGoal(context, goal.reference,
+                      onPressed: () => _editGoal(context, goalRef,
                           goal.data() as Map<String, dynamic>),
                     ),
                   ],
