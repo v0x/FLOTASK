@@ -21,6 +21,9 @@ import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
 import 'package:flotask/pages/map.dart'; 
 
+// TEST voice memos
+import 'package:flotask/components/voice_memos.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

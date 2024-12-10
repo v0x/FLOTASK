@@ -1,5 +1,6 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/components/textfield.dart';
+import 'package:flotask/components/voice_memos.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,7 @@ class _EventDialogState extends State<EventDialog> {
   DateTime _endDate = DateTime.now();
   bool _isRecurring = false;
   bool _initialized = false;
+  String _voiceMemoText = '';
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _EventDialogState extends State<EventDialog> {
       _eventTitleController.text = event.event.title;
       _descController.text = event.event.description ?? '';
       _isRecurring = event.isRecurring;
+      _voiceMemoText = event.voiceMemos ?? '';
 
       _startDate = event.event.date;
       _endDate = event.event.endDate;
@@ -189,6 +192,30 @@ class _EventDialogState extends State<EventDialog> {
                 },
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Voice Memos',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  VoiceMemo(
+                    event: widget.existingEvent,
+                    onTextChanged: (text) {
+                      setState(() {
+                        _voiceMemoText = text;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
             TextButton(
 
                 // main functionality to add an event to global EventModel class
@@ -219,14 +246,16 @@ class _EventDialogState extends State<EventDialog> {
                       endTime: event.endTime,
                       description: _descController.text,
                       isRecurring: _isRecurring,
+                      voiceMemos: _voiceMemoText,
                     );
                   } else {
                     widget.eventController.add(event);
                     eventProvider.addEvent(
                       event,
-                      note: "Some notes",
+                      note: _descController.text,
                       tags: ["work"],
                       isRecurring: _isRecurring,
+                      voiceMemos: _voiceMemoText,
                     );
                   }
 

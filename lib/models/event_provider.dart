@@ -61,9 +61,17 @@ class EventProvider extends ChangeNotifier {
 
   // Method to add a new event
   Future<void> addEvent(CalendarEventData eventData,
-      {String? note, List<String>? tags, bool? isRecurring}) async {
+      {String? note,
+      List<String>? tags,
+      bool? isRecurring,
+      String? voiceMemos}) async {
     final newEvent = EventModel(
-        event: eventData, note: note, tags: tags, isRecurring: isRecurring!);
+      event: eventData,
+      note: note,
+      tags: tags,
+      isRecurring: isRecurring!,
+      voiceMemos: voiceMemos,
+    );
 
 // Save the event to Firestore
     DocumentReference docRef = await _firestore.collection('events').add({
@@ -81,7 +89,8 @@ class EventProvider extends ChangeNotifier {
       'yearStreak': newEvent.yearStreak,
       'isArchived': newEvent.isArchived,
       'note': newEvent.note,
-      'tags': newEvent.tags
+      'tags': newEvent.tags,
+      'voiceMemos': newEvent.voiceMemos
     });
 
     newEvent.id = docRef.id;
@@ -270,6 +279,20 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> saveMemo(String eventId, String text) async {
+    final index = _events.indexWhere((element) => element.id == eventId);
+    final event = _events[index];
+
+    event.voiceMemos = text;
+
+    await FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventId)
+        .update({'voiceMemos': text});
+
+    notifyListeners();
+  }
+
   Future<void> updateEventDetails(
     String eventId, {
     String? title,
@@ -277,6 +300,7 @@ class EventProvider extends ChangeNotifier {
     DateTime? endTime,
     String? description,
     bool? isRecurring,
+    String? voiceMemos,
   }) async {
     try {
       final docRef = _firestore.collection('events').doc(eventId);
@@ -287,6 +311,7 @@ class EventProvider extends ChangeNotifier {
       if (endTime != null) updates['endTime'] = endTime.toIso8601String();
       if (description != null) updates['description'] = description;
       if (isRecurring != null) updates['isRecurring'] = isRecurring;
+      if (voiceMemos != null) updates['voiceMemos'] = voiceMemos;
 
       await docRef.update(updates);
 

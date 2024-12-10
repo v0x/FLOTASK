@@ -31,20 +31,23 @@ class EventModel {
 // for archive list functionality
   bool isArchived;
 
-  EventModel({
-    this.id,
-    this.ref,
-    required this.event,
-    this.note,
-    this.tags,
-    this.category,
-    this.isCompleted = false,
-    this.dayStreak = 0,
-    this.monthStreak = 0,
-    this.yearStreak = 0,
-    this.isRecurring = false,
-    this.isReminder = false,
-    this.lastCompletedDate,
-    this.isArchived = false,
-  });
+  // add voice memos STT
+  String? voiceMemos;
+
+  EventModel(
+      {this.id,
+      this.ref,
+      required this.event,
+      this.note,
+      this.tags,
+      this.category,
+      this.isCompleted = false,
+      this.dayStreak = 0,
+      this.monthStreak = 0,
+      this.yearStreak = 0,
+      this.isRecurring = false,
+      this.isReminder = false,
+      this.lastCompletedDate,
+      this.isArchived = false,
+      this.voiceMemos});
 }

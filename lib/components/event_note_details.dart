@@ -1,9 +1,11 @@
 import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:markdown_editor_plus/markdown_editor_plus.dart';
 import 'package:flotask/models/event_model.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flotask/components/voice_memos.dart';
 
 // widget to show event details and markdown note section
 class EventDetailWithNotes extends StatefulWidget {
@@ -202,6 +204,27 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                           filled: true,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Voice Memos',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      VoiceMemo(event: event),
                     ],
                   ),
                 ),
