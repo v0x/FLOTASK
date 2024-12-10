@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/providers/achievement_provider.dart';
 
 // COMPONENTS
 import 'package:flotask/components/notifications.dart';
@@ -21,10 +22,17 @@ import 'package:flotask/pages/pomodoroPage.dart';
 import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/achievements.dart';
 import 'package:flotask/pages/map.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MainApp());
+}
+
+class MainApp extends StatelessWidget {
+
   Notifications notifications = Notifications();
   await notifications.initState();
 
@@ -53,9 +61,20 @@ class _MainAppState extends State<MainApp> {
 
   @override
   Widget build(BuildContext context) {
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: const Color(0xFFF8F8F8),
+        scaffoldBackgroundColor: const Color(0xFFF8F8F8),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: BottomNav(),
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => EventProvider()),
+        ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -97,8 +116,8 @@ class _MainAppState extends State<MainApp> {
   }
 }
 
-// BottomNav is a stateful widget managing the bottom navigation bar.
 class BottomNav extends StatefulWidget {
+
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
@@ -110,7 +129,7 @@ class BottomNav extends StatefulWidget {
 }
 
 class _BottomNavState extends State<BottomNav> {
-  int currentPageIndex = 0; // Keeps track of the current tab index
+  int currentPageIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +144,7 @@ class _BottomNavState extends State<BottomNav> {
         ProgressPage(),
         Category(),
         UserProfilePage(),
+        AchievementPage(),
         MapPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -140,6 +160,25 @@ class _BottomNavState extends State<BottomNav> {
           BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
           BottomNavigationBarItem(
+            icon: Icon(Icons.home, size: 30),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.task, size: 30),
+            label: 'Task',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today, size: 30),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm, size: 30),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: 'Progress',
+          ),
               icon: Icon(Icons.calendar_today, size: 30), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
           BottomNavigationBarItem(
@@ -148,6 +187,7 @@ class _BottomNavState extends State<BottomNav> {
               icon: Icon(Icons.folder, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.location_pin, size: 30), label: ''),
         ],
