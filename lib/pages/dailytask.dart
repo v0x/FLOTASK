@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_goal.dart';
 import 'package:flotask/utils/firestore_helpers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 //stateful widget for the Taskpage
 class TaskPage extends StatefulWidget {
@@ -47,108 +48,135 @@ class _TaskPageState extends State<TaskPage>
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
-  // Function to build the list of today's recurrences for a given status
   Widget _buildTaskList(String status) {
     final today = _formatDate(DateTime.now());
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('goals').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, userSnapshot) {
+        if (!userSnapshot.hasData) {
+          return const Center(child: Text('Please log in.'));
         }
 
-        final goals = snapshot.data!.docs;
-        List<Widget> taskWidgets = [];
+        final String userId = userSnapshot.data!.uid;
 
-        for (var goal in goals) {
-          taskWidgets.add(
-            StreamBuilder<QuerySnapshot>(
-              stream: goal.reference.collection('tasks').snapshots(),
-              builder: (context, taskSnapshot) {
-                if (!taskSnapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .collection('goals')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                final tasks = taskSnapshot.data!.docs;
-                if (tasks.isEmpty) {
-                  return const SizedBox.shrink();
-                }
+            final goals = snapshot.data!.docs;
+            List<Widget> taskWidgets = [];
 
-                return Column(
-                  children: tasks.map((task) {
-                    String taskName = task['task'];
-                    String goalName = goal['title'];
+            for (var goal in goals) {
+              taskWidgets.add(
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(userId)
+                      .collection('goals')
+                      .doc(goal.id)
+                      .collection('tasks')
+                      .snapshots(),
+                  builder: (context, taskSnapshot) {
+                    if (!taskSnapshot.hasData) {
+                      return const SizedBox.shrink();
+                    }
 
-                    // Fetch only today's recurrences for the task
-                    return StreamBuilder<QuerySnapshot>(
-                      stream: task.reference
-                          .collection('recurrences')
-                          .where('status', isEqualTo: status)
-                          .where('date', isEqualTo: DateTime.parse(today))
-                          .snapshots(),
-                      builder: (context, recurrenceSnapshot) {
-                        if (!recurrenceSnapshot.hasData) {
-                          return const SizedBox.shrink();
-                        }
+                    final tasks = taskSnapshot.data!.docs;
+                    if (tasks.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
 
-                        //final recurrences = recurrenceSnapshot.data!.docs;
-                        final recurrences = recurrenceSnapshot.data!.docs;
+                    return Column(
+                      children: tasks.map((task) {
+                        String taskName = task['task'];
+                        String goalName = goal['title'];
 
-                        if (recurrences.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
+                        return StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(userId)
+                              .collection('goals')
+                              .doc(goal.id)
+                              .collection('tasks')
+                              .doc(task.id)
+                              .collection('recurrences')
+                              .where('status', isEqualTo: status)
+                              //.where('date', isEqualTo: Timestamp.fromDate(DateTime.now()))
+                              .where('date', isEqualTo: DateTime.parse(today))
+                              .snapshots(),
+                          builder: (context, recurrenceSnapshot) {
+                            if (!recurrenceSnapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
 
-                        return Column(
-                          children: recurrences.map((recurrence) {
-                            bool isCompleted =
-                                recurrence['status'] == 'completed';
+                            final recurrences = recurrenceSnapshot.data!.docs;
 
-                            return ListTile(
-                              leading: Checkbox(
-                                value: isCompleted,
-                                onChanged: (bool? value) {
-                                  if (value != null) {
-                                    _updateRecurrenceStatus(
-                                        recurrence.reference,
-                                        task.reference,
-                                        goal.reference,
-                                        value);
-                                  }
-                                },
-                              ),
-                              title: Text(taskName),
-                              subtitle: Text(
-                                  'Goal: $goalName\nDate: ${_formatDate((task['startDate'] as Timestamp).toDate())} to ${_formatDate((task['endDate'] as Timestamp).toDate())}\nTime: ${task['selectedTime'] ?? 'Any time'}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () {
-                                      _editTask(task.reference,
-                                          task.data() as Map<String, dynamic>);
+                            if (recurrences.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return Column(
+                              children: recurrences.map((recurrence) {
+                                bool isCompleted =
+                                    recurrence['status'] == 'completed';
+
+                                return ListTile(
+                                  leading: Checkbox(
+                                    value: isCompleted,
+                                    onChanged: (bool? value) {
+                                      if (value != null) {
+                                        _updateRecurrenceStatus(
+                                          recurrence.reference,
+                                          task.reference,
+                                          goal.reference,
+                                          value,
+                                        );
+                                      }
                                     },
                                   ),
-                                ],
-                              ),
+                                  title: Text(taskName),
+                                  subtitle: Text(
+                                      'Goal: $goalName\nDate: ${_formatDate((task['startDate'] as Timestamp).toDate())} to ${_formatDate((task['endDate'] as Timestamp).toDate())}\nTime: ${task['selectedTime'] ?? 'Any time'}'),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () {
+                                          _editTask(
+                                              task.reference,
+                                              task.data()
+                                                  as Map<String, dynamic>);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         );
-                      },
+                      }).toList(),
                     );
-                  }).toList(),
-                );
-              },
-            ),
-          );
-        }
+                  },
+                ),
+              );
+            }
 
-        if (taskWidgets.isEmpty) {
-          return Center(child: const Text('No tasks for today.'));
-        }
+            if (taskWidgets.isEmpty) {
+              return const Center(child: Text('No tasks for today.'));
+            }
 
-        return ListView(children: taskWidgets);
+            return ListView(children: taskWidgets);
+          },
+        );
       },
     );
   }

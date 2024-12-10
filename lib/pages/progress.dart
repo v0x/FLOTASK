@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'tasklist.dart'; // Import TaskListPage
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -187,83 +188,105 @@ class _ProgressPageState extends State<ProgressPage> {
           ),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('goals').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+
+      //body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, userSnapshot) {
+          if (!userSnapshot.hasData) {
             return const Center(
-                child: CircularProgressIndicator()); //show loading indicator
+              child: Text('Please log in to view your goals.'),
+            );
           }
 
-          final goals = snapshot.data!.docs.where((goal) {
-            //search bar WR4
-            //filter goals based on the search query
-            final title =
-                (goal['title'] ?? '').toString().toLowerCase(); //search bar WR4
-            final category = (goal['category'] ?? '')
-                .toString()
-                .toLowerCase(); //search bar WR4
-            final note = (goal['note'] ?? '').toString().toLowerCase();
-            return title.contains(_searchQuery) ||
-                category.contains(_searchQuery) ||
-                note.contains(_searchQuery); //search bar WR4
-          }).toList();
+          final String userId = userSnapshot.data!.uid;
 
-          if (goals.isEmpty) {
-            return const Center(child: Text('No goals created yet.'));
-          }
+          return StreamBuilder<QuerySnapshot>(
+            //stream: FirebaseFirestore.instance.collection('goals').snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .collection('goals')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(
+                    child:
+                        CircularProgressIndicator()); //show loading indicator
+              }
 
-          return ListView.builder(
-            itemCount: goals.length,
-            itemBuilder: (context, index) {
-              final goal = goals[index];
-              final goalRef = goal.reference;
+              final goals = snapshot.data!.docs.where((goal) {
+                //search bar WR4
+                //filter goals based on the search query
+                final title = (goal['title'] ?? '')
+                    .toString()
+                    .toLowerCase(); //search bar WR4
+                final category = (goal['category'] ?? '')
+                    .toString()
+                    .toLowerCase(); //search bar WR4
+                final note = (goal['note'] ?? '').toString().toLowerCase();
+                return title.contains(_searchQuery) ||
+                    category.contains(_searchQuery) ||
+                    note.contains(_searchQuery); //search bar WR4
+              }).toList();
 
-              //calculate goal progress based on completed and toatl recurrences
-              final int totalTaskCompletedRecurrences =
-                  goal['totalTaskCompletedRecurrences'] ?? 0;
-              final int totalTaskRecurrences =
-                  goal['totalTaskRecurrences'] ?? 0;
-              final double goalProgress = totalTaskRecurrences > 0
-                  ? totalTaskCompletedRecurrences / totalTaskRecurrences
-                  : 0;
-              //format start and end dates for display
-              final String goalStartDate =
-                  _formatDate((goal['startDate'] as Timestamp).toDate());
-              final String goalEndDate =
-                  _formatDate((goal['endDate'] as Timestamp).toDate());
+              if (goals.isEmpty) {
+                return const Center(child: Text('No goals created yet.'));
+              }
 
-              return ListTile(
-                //goal with edit icon
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(goal['title']),
-                    IconButton(
-                      icon: const Icon(Icons.edit), // Edit icon
-                      onPressed: () => _editGoal(context, goalRef,
-                          goal.data() as Map<String, dynamic>),
+              return ListView.builder(
+                itemCount: goals.length,
+                itemBuilder: (context, index) {
+                  final goal = goals[index];
+                  final goalRef = goal.reference;
+
+                  //calculate goal progress based on completed and toatl recurrences
+                  final int totalTaskCompletedRecurrences =
+                      goal['totalTaskCompletedRecurrences'] ?? 0;
+                  final int totalTaskRecurrences =
+                      goal['totalTaskRecurrences'] ?? 0;
+                  final double goalProgress = totalTaskRecurrences > 0
+                      ? totalTaskCompletedRecurrences / totalTaskRecurrences
+                      : 0;
+                  //format start and end dates for display
+                  final String goalStartDate =
+                      _formatDate((goal['startDate'] as Timestamp).toDate());
+                  final String goalEndDate =
+                      _formatDate((goal['endDate'] as Timestamp).toDate());
+
+                  return ListTile(
+                    //goal with edit icon
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(goal['title']),
+                        IconButton(
+                          icon: const Icon(Icons.edit), // Edit icon
+                          onPressed: () => _editGoal(context, goalRef,
+                              goal.data() as Map<String, dynamic>),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                //showing goal details and progress bar
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        'Category: ${goal['category'] ?? 'No category'}\nNote: ${goal['note'] ?? 'No note'}\nDate: $goalStartDate to $goalEndDate'),
-                    LinearProgressIndicator(value: goalProgress),
-                    Text(
-                        '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
-                  ],
-                ),
-                //tap to naviagte to the Tasklist
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TaskListPage(goal: goal),
+                    //showing goal details and progress bar
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            'Category: ${goal['category'] ?? 'No category'}\nNote: ${goal['note'] ?? 'No note'}\nDate: $goalStartDate to $goalEndDate'),
+                        LinearProgressIndicator(value: goalProgress),
+                        Text(
+                            '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
+                      ],
                     ),
+                    //tap to naviagte to the Tasklist
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TaskListPage(goal: goal),
+                        ),
+                      );
+                    },
                   );
                 },
               );

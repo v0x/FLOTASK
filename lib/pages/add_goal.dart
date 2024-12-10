@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_task.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});
@@ -56,8 +57,24 @@ class _AddGoalPageState extends State<AddGoalPage> {
   Future<void> _saveGoal() async {
     final goalTitle = _titleController.text;
 
+    // Get the current user's UID
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You need to log in to save a goal.')),
+      );
+      return;
+    }
+
+    final String userId = currentUser.uid;
+
     if (goalTitle.isNotEmpty && _tasks.isNotEmpty) {
-      final goalRef = FirebaseFirestore.instance.collection('goals').doc();
+      //final goalRef = FirebaseFirestore.instance.collection('goals').doc();
+      final goalRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('goals')
+          .doc(); //store new goal under user
 
       int totalTaskRecurrences = 0; //store the sum of all task recurrences
 

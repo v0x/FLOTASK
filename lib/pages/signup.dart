@@ -95,7 +95,7 @@ class _SignupPageState extends State<SignupPage> {
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/images/background.jpg"),
+                  image: AssetImage("assets/background.jpg"),
                   fit: BoxFit
                       .cover, // Make the image cover the entire background
                 ),
