@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_goal.dart';
 import 'package:flotask/utils/firestore_helpers.dart';
+import 'package:flotask/models/event_provider.dart';
+import 'package:flotask/models/event_model.dart';
+import 'package:provider/provider.dart';
+import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/components/events_dialog.dart';
+import 'package:intl/intl.dart';
+import 'package:flotask/components/event_note_details.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 //stateful widget for the Taskpage
 class TaskPage extends StatefulWidget {
@@ -15,11 +23,15 @@ class TaskPage extends StatefulWidget {
 class _TaskPageState extends State<TaskPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  //initialze the tab controller with 2 tabs
+  TimeOfDay? _selectedTime;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Initialize event provider
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+    eventProvider.loadEventsFromFirebase();
   }
 
   //dispose the tab controller when not needed
@@ -49,235 +61,142 @@ class _TaskPageState extends State<TaskPage>
 
   // Function to build the list of today's recurrences for a given status
   Widget _buildTaskList(String status) {
-    final today = _formatDate(DateTime.now());
+    return Consumer<EventProvider>(
+      builder: (context, eventProvider, child) {
+        final filteredEvents = eventProvider.events.where((event) {
+          final eventStatus = event.isCompleted ? 'completed' : 'todo';
+          return eventStatus == status && !event.isArchived;
+        }).toList();
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('goals').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+        if (filteredEvents.isEmpty) {
+          return Center(child: Text('No ${status} tasks'));
         }
 
-        final goals = snapshot.data!.docs;
-        List<Widget> taskWidgets = [];
+        return ListView.builder(
+          itemCount: filteredEvents.length,
+          itemBuilder: (context, index) {
+            final event = filteredEvents[index];
 
-        for (var goal in goals) {
-          taskWidgets.add(
-            StreamBuilder<QuerySnapshot>(
-              stream: goal.reference.collection('tasks').snapshots(),
-              builder: (context, taskSnapshot) {
-                if (!taskSnapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
+            return Slidable(
+              endActionPane: ActionPane(
+                motion: const ScrollMotion(),
+                children: [
+                  SlidableAction(
+                    flex: 2,
+                    onPressed: (context) {
+                      // Archive the event
+                      context
+                          .read<EventProvider>()
+                          .updateArchivedStatus(event.id!, false);
 
-                final tasks = taskSnapshot.data!.docs;
-                if (tasks.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-
-                return Column(
-                  children: tasks.map((task) {
-                    String taskName = task['task'];
-                    String goalName = goal['title'];
-
-                    // Fetch only today's recurrences for the task
-                    return StreamBuilder<QuerySnapshot>(
-                      stream: task.reference
-                          .collection('recurrences')
-                          .where('status', isEqualTo: status)
-                          .snapshots(),
-                      builder: (context, recurrenceSnapshot) {
-                        if (!recurrenceSnapshot.hasData) {
-                          return const SizedBox.shrink();
-                        }
-
-                        //final recurrences = recurrenceSnapshot.data!.docs;
-                        final recurrences = recurrenceSnapshot.data!.docs.where(
-                          (recurrence) {
-                            DateTime recurrenceDate =
-                                (recurrence['date'] as Timestamp).toDate();
-                            return _formatDate(recurrenceDate) == today;
-                          },
-                        );
-                        if (recurrences.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return Column(
-                          children: recurrences.map((recurrence) {
-                            bool isCompleted =
-                                recurrence['status'] == 'completed';
-
-                            return ListTile(
-                              leading: Checkbox(
-                                value: isCompleted,
-                                onChanged: (bool? value) {
-                                  if (value != null) {
-                                    _updateRecurrenceStatus(
-                                        recurrence.reference,
-                                        task.reference,
-                                        goal.reference,
-                                        value);
-                                  }
-                                },
-                              ),
-                              title: Text(taskName),
-                              subtitle: Text(
-                                  'Goal: $goalName\nDate: ${_formatDate((task['startDate'] as Timestamp).toDate())} to ${_formatDate((task['endDate'] as Timestamp).toDate())}\nTime: ${task['selectedTime'] ?? 'Any time'}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () {
-                                      _editTask(task.reference,
-                                          task.data() as Map<String, dynamic>);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('${event.event.title} archived')),
+                      );
+                    },
+                    backgroundColor: const Color(0xFF7BC043),
+                    foregroundColor: Colors.white,
+                    icon: Icons.archive,
+                    label: 'Archive',
+                  ),
+                ],
+              ),
+              child: ListTile(
+                leading: Checkbox(
+                  value: event.isCompleted,
+                  onChanged: (bool? value) async {
+                    if (value != null) {
+                      await eventProvider.toggleComplete(event.id!, value);
+                      if (value && event.isRecurring) {
+                        // Update streak when completing a recurring task
+                        await eventProvider.updateStreak(event.id!);
+                      }
+                    }
+                  },
+                ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        event.event.title,
+                        style: TextStyle(
+                          decoration: event.isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                    if (event.isRecurring) ...[
+                      Text(
+                        _getStreakFlair(event),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      const SizedBox(width: 4),
+                      if (event.dayStreak != null && event.dayStreak! > 0)
+                        Text(
+                          '${event.dayStreak}d',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${DateFormat('MMM dd, yyyy').format(event.event.date)}',
+                    ),
+                    Text('${event.event.startTime != null ? '${TimeOfDay.fromDateTime(event.event.startTime!).format(context)} - '
+                        '${event.event.endTime != null ? TimeOfDay.fromDateTime(event.event.endTime!).format(context) : ''}' : 'Any time'}'),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        _editTask(event);
                       },
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          );
-        }
-
-        if (taskWidgets.isEmpty) {
-          return Center(child: const Text('No tasks for today.'));
-        }
-
-        return ListView(children: taskWidgets);
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EventDetailWithNotes(event: event),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
       },
     );
   }
 
   //work review3
   // Function to edit a task
-  Future<void> _editTask(
-      DocumentReference taskRef, Map<String, dynamic> currentTaskData) async {
-    // Create controllers and variables with current task values
-    final TextEditingController _taskController =
-        TextEditingController(text: currentTaskData['task']);
-    TimeOfDay? _selectedTime = currentTaskData['selectedTime'] != null
-        ? TimeOfDay(
-            hour: int.parse(currentTaskData['selectedTime'].split(":")[0]),
-            minute: int.parse(currentTaskData['selectedTime'].split(":")[1]),
-          )
-        : null;
-    String _selectedOption =
-        _selectedTime != null ? 'Specific time' : 'Any time';
-
-    Future<void> _selectTime(BuildContext context, StateSetter setState) async {
-      final TimeOfDay? picked = await showTimePicker(
-        context: context,
-        initialTime: _selectedTime ??
-            TimeOfDay.now(), // Default to current time if none selected
-      );
-      if (picked != null && picked != _selectedTime) {
-        setState(() {
-          _selectedTime = picked; // Update the selected time
-        });
-      }
-    }
+  Future<void> _editTask(EventModel event) async {
+    final eventController = EventController()..addAll([event.event]);
 
     await showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Edit Task'),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Task Name Input
-                    TextField(
-                      controller: _taskController,
-                      decoration: const InputDecoration(
-                        labelText: 'Task Name',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-
-                    // Time Selection
-                    const Text(
-                      'Time',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Time:'),
-                        DropdownButton<String>(
-                          value: _selectedOption,
-                          items: <String>['Any time', 'Specific time']
-                              .map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedOption = newValue!;
-                              if (newValue == 'Specific time') {
-                                _selectTime(context,
-                                    setState); // Open time picker if "Specific time" is selected
-                              } else {
-                                _selectedTime = null; // Reset the selected time
-                              }
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-
-                    // Display the selected time if "Specific time" is chosen
-                    if (_selectedOption == 'Specific time' &&
-                        _selectedTime != null)
-                      Text('Selected Time: ${_selectedTime!.format(context)}'),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    _deleteTask(taskRef);
-                  },
-                  child: const Text('Delete'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    // Update the task data in Firestore
-                    await taskRef.update({
-                      'task': _taskController.text,
-                      //'repeatInterval': _repeatIntervalNotifier.value,
-                      'selectedTime': _selectedTime != null
-                          ? '${_selectedTime!.hour}:${_selectedTime!.minute}'
-                          : null, // Save selected time if any, otherwise set null
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Save Changes'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (BuildContext dialogContext) => Provider<EventController>(
+        create: (context) => eventController,
+        child: EventDialog(
+          eventController: eventController,
+          longPressDate: event.event.date,
+          longPressEndDate: event.event.endDate,
+          isEditing: true,
+          existingEvent: event,
+        ),
+      ),
     );
   }
 
@@ -299,8 +218,10 @@ class _TaskPageState extends State<TaskPage>
             TextButton(
               onPressed: () async {
                 await taskRef.delete();
-                Navigator.of(context).pop(); // Close the confirmation dialog
-                Navigator.of(context).pop(); // Close the edit dialog
+                // Close the confirmation dialog
+                Navigator.of(context).pop();
+                // Close the edit dialog
+                Navigator.of(context).pop();
               },
               child: const Text('Delete'),
             ),
@@ -310,57 +231,228 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
+  // create an event from a task
+  Future<void> _createEventFromTask(String taskName, DateTime startDate,
+      DateTime endDate, String? selectedTime) async {
+    final eventData = CalendarEventData(
+      title: taskName,
+      date: startDate,
+      endDate: endDate,
+      startTime: selectedTime != null
+          ? DateTime(
+              startDate.year,
+              startDate.month,
+              startDate.day,
+              int.parse(selectedTime.split(':')[0]),
+              int.parse(selectedTime.split(':')[1]))
+          : startDate,
+      endTime: selectedTime != null
+          ? DateTime(
+              endDate.year,
+              endDate.month,
+              endDate.day,
+              int.parse(selectedTime.split(':')[0]) + 1,
+              int.parse(selectedTime.split(':')[1]))
+          : endDate,
+    );
+
+    await context.read<EventProvider>().addEvent(
+          eventData,
+          note: "Task created from daily tasks",
+          tags: ["task"],
+          isRecurring: true,
+        );
+  }
+
+  Future<void> _selectTime(BuildContext context, StateSetter setDialogState,
+      TimeOfDay? currentTime) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: currentTime ?? TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setDialogState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
+  String _getStreakFlair(EventModel event) {
+    if (event.yearStreak != null && event.yearStreak! > 0) {
+      return '🏆';
+    } else if (event.monthStreak != null && event.monthStreak! > 0) {
+      return '🥈';
+    } else if (event.dayStreak != null && event.dayStreak! > 0) {
+      return '🥉';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      //appBar with title and tabs
-      appBar: AppBar(
-        title: Center(
-          child: Text(
-            "Daily tasks", //page title
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    return Consumer<EventProvider>(
+      builder: (context, eventProvider, child) {
+        return Scaffold(
+          //appBar with title and tabs
+          appBar: AppBar(
+            title: Center(
+              child: Text(
+                "Tasks",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            backgroundColor: const Color(0xFFEBEAE3),
+            actions: [
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
+              ),
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'To-do'),
+                Tab(text: 'Completed'),
+              ],
             ),
           ),
-        ),
-        backgroundColor: const Color(0xFFEBEAE3),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'To-do'),
-            Tab(text: 'Completed'),
-          ],
-        ),
-      ),
-      //content of each tab
-      body: TabBarView(
-        controller: _tabController, //controller for tabs
-        children: [
-          _buildTaskList('todo'), // Fetch and display "To-do" tasks
-          _buildTaskList('completed'), // Fetch and display "Completed" tasks
-        ],
-      ),
-      //floating action button to ass a new goal
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: FloatingActionButton(
-          onPressed: () {
-            //navigate to add goal page when clicking on the button
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddGoalPage()),
-            );
-          },
-          backgroundColor: Colors.black,
-          shape: const CircleBorder(), //circle button shape
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 24,
+
+          // archive list side drawer
+          endDrawer: Drawer(
+            child: Column(
+              children: <Widget>[
+                Container(
+                  color: const Color(0xFFEBEAE3),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.archive, color: Colors.black, size: 30),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Archived Tasks',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Consumer<EventProvider>(
+                    builder: (context, eventProvider, child) {
+                      final archivedEvents = eventProvider.events
+                          .where((element) => element.isArchived)
+                          .toList();
+
+                      return ListView.builder(
+                        itemCount: archivedEvents.length,
+                        itemBuilder: (context, index) {
+                          final archivedEvent = archivedEvents[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            elevation: 4,
+                            child: Slidable(
+                              endActionPane: ActionPane(
+                                motion: const ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    flex: 2,
+                                    onPressed: (context) {
+                                      context
+                                          .read<EventProvider>()
+                                          .updateArchivedStatus(
+                                              archivedEvent.id!, true);
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                '${archivedEvent.event.title} unarchived')),
+                                      );
+                                    },
+                                    backgroundColor: const Color(0xFF7BC043),
+                                    foregroundColor: Colors.white,
+                                    icon: Icons.unarchive,
+                                    label: 'Unarchive',
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                title: Text(
+                                  archivedEvent.event.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${DateFormat('h:mm a').format(archivedEvent.event.date)} - ${DateFormat('h:mm a').format(archivedEvent.event.endTime!)}',
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          EventDetailWithNotes(
+                                              event: archivedEvent),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+          //content of each tab
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildTaskList('todo'),
+              _buildTaskList('completed'),
+            ],
+          ),
+          //floating action button to add a new goal
+          floatingActionButton: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: FloatingActionButton(
+              onPressed: () {
+                //navigate to event dialog when clicking on the button
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => EventDialog(
+                    eventController: EventController(),
+                  ),
+                );
+              },
+              backgroundColor: Colors.black,
+              shape: const CircleBorder(),
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'add_task.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'dailytask.dart';
+import 'package:flotask/models/event_provider.dart';
+import 'package:flotask/models/event_model.dart';
+import 'package:provider/provider.dart';
+import 'package:calendar_view/calendar_view.dart';
+import 'package:flotask/components/events_dialog.dart';
+import 'package:intl/intl.dart';
 
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});
@@ -11,18 +17,18 @@ class AddGoalPage extends StatefulWidget {
 }
 
 class _AddGoalPageState extends State<AddGoalPage> {
-  final TextEditingController _titleController =
-      TextEditingController(); // Controller for goal title
-  final List<Map<String, dynamic>> _tasks = []; // Change type to store map data
+  final TextEditingController _titleController = TextEditingController();
+  final List<Map<String, dynamic>> _tasks = [];
 
   bool _isGoalComplete = false;
-  final TextEditingController _categoryController =
-      TextEditingController(); //controller for Category
-  final TextEditingController _noteController =
-      TextEditingController(); //controller for Note
+  final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
 
-  DateTime? _startDate; //variable to store start date
-  DateTime? _endDate; //variable to store end date
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _isRecurring = false;
+  final TextEditingController _descController =
+      TextEditingController(); //controller for Description
 
   void _checkIfGoalIsComplete() {
     setState(() {
@@ -56,58 +62,50 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
   Future<void> _saveGoal() async {
     final goalTitle = _titleController.text;
+    final eventProvider = context.read<EventProvider>();
 
     if (goalTitle.isNotEmpty && _tasks.isNotEmpty) {
-      final goalRef = FirebaseFirestore.instance.collection('goals').doc();
+      // Create the main goal event
+      final goalEvent = CalendarEventData(
+        title: goalTitle,
+        date: _startDate!,
+        endDate: _endDate!,
+        description: _noteController.text,
+      );
 
-      int totalTaskRecurrences = 0; //store the sum of all task recurrences
+      // Add the goal as an event
+      await eventProvider.addEvent(
+        goalEvent,
+        note: _noteController.text,
+        tags: [_categoryController.text],
+        isRecurring: false,
+      );
 
-      await goalRef.set({
-        'title': goalTitle,
-        'category': _categoryController.text,
-        'note': _noteController.text,
-        'startDate':
-            _startDate != null ? Timestamp.fromDate(_startDate!) : null,
-        'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
-        'createdAt': FieldValue.serverTimestamp(),
-        'totalTaskCompletedRecurrences': 0,
-      });
-
+      // Add each task as a sub-event
       for (final taskData in _tasks) {
-        if (taskData['startDate'] != null &&
-            taskData['endDate'] != null &&
-            taskData['repeatInterval'] != null) {
-          List<DateTime> recurrences = _generateRecurringDates(
-            taskData['startDate'],
-            taskData['endDate'],
-            taskData['repeatInterval'],
-          );
+        final taskEvent = CalendarEventData(
+          title: taskData['task'],
+          date: taskData['startDate'],
+          endDate: taskData['endDate'],
+          description: 'Task for goal: $goalTitle',
+          startTime: taskData['selectedTime'] != null
+              ? DateTime(
+                  taskData['startDate'].year,
+                  taskData['startDate'].month,
+                  taskData['startDate'].day,
+                  int.parse(taskData['selectedTime'].split(':')[0]),
+                  int.parse(taskData['selectedTime'].split(':')[1]),
+                )
+              : null,
+        );
 
-          final taskRef = await goalRef.collection('tasks').add({
-            'task': taskData['task'],
-            'repeatInterval': taskData['repeatInterval'],
-            'startDate': Timestamp.fromDate(taskData['startDate']),
-            'endDate': Timestamp.fromDate(taskData['endDate']),
-            'selectedTime': taskData['selectedTime'],
-            'status': 'todo',
-            'totalRecurrences': recurrences.length,
-            'totalCompletedRecurrences': 0,
-          });
-          totalTaskRecurrences += recurrences.length;
-
-          for (DateTime date in recurrences) {
-            await taskRef.collection('recurrences').add({
-              'date': Timestamp.fromDate(date),
-              'status': 'todo',
-            });
-          }
-        }
+        await eventProvider.addEvent(
+          taskEvent,
+          note: 'Part of goal: $goalTitle',
+          tags: [_categoryController.text],
+          isRecurring: taskData['repeatInterval'] > 0,
+        );
       }
-
-      // Update the goal with the totalTaskRecurrences after all tasks are added
-      await goalRef.update({
-        'totalTaskRecurrences': totalTaskRecurrences,
-      });
 
       // Clear data after saving
       _titleController.clear();
@@ -116,9 +114,9 @@ class _AddGoalPageState extends State<AddGoalPage> {
       _noteController.clear();
       setState(() {
         _isGoalComplete = false;
+        _startDate = null;
+        _endDate = null;
       });
-
-      print('Goal and tasks saved to Firestore');
 
       Navigator.pushReplacement(
         context,
@@ -131,27 +129,35 @@ class _AddGoalPageState extends State<AddGoalPage> {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please select start and end dates for the goal.')),
+          content: Text('Please select start and end dates for the goal.'),
+        ),
       );
       return;
     }
 
-    final newTask = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddTaskPage(
-          goalStartDate: _startDate!,
-          goalEndDate: _endDate!,
-        ),
+    await showDialog(
+      context: context,
+      builder: (context) => EventDialog(
+        eventController: EventController(),
+        longPressDate: _startDate,
+        longPressEndDate: _endDate,
       ),
     );
 
-    if (newTask != null) {
-      setState(() {
-        _tasks.add(newTask);
-        _checkIfGoalIsComplete();
+    final eventProvider = context.read<EventProvider>();
+    final latestEvent = eventProvider.events.last;
+
+    setState(() {
+      _tasks.add({
+        'task': latestEvent.event.title,
+        'startDate': latestEvent.event.date,
+        'endDate': latestEvent.event.endDate,
+        'repeatInterval': latestEvent.isRecurring ? 1 : 0,
+        'selectedTime': latestEvent.event.startTime != null
+            ? '${latestEvent.event.startTime!.hour}:${latestEvent.event.startTime!.minute}'
+            : null,
       });
-    }
+    });
   }
 
   @override
@@ -165,107 +171,213 @@ class _AddGoalPageState extends State<AddGoalPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEBEAE3),
       appBar: AppBar(
-        title: const Text('Add Goal'),
         backgroundColor: const Color(0xFFEBEAE3),
+        elevation: 0,
+        title: const Text(
+          'Add Goal',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
+          TextButton(
             onPressed: _isGoalComplete ? _saveGoal : null,
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color: _isGoalComplete ? Colors.black : Colors.grey,
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
-      backgroundColor: const Color(0xFFEBEAE3),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Goal Title'),
-              onChanged: (value) => _checkIfGoalIsComplete(),
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => _selectDate(context, _startDate, (date) {
-                      setState(() {
-                        _startDate = date;
-                      });
-                    }),
-                    child: Text(_startDate == null
-                        ? 'Select Start Date'
-                        : 'Start Date: ${_startDate!.year}-${_startDate!.month}-${_startDate!.day}'),
-                  ),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => _selectDate(context, _endDate, (date) {
-                      setState(() {
-                        _endDate = date;
-                      });
-                    }),
-                    child: Text(_endDate == null
-                        ? 'Select End Date'
-                        : 'End Date: ${_endDate!.year}-${_endDate!.month}-${_endDate!.day}'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _categoryController,
-              decoration: const InputDecoration(labelText: 'Category'),
-              keyboardType: TextInputType.visiblePassword,
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _noteController,
-              decoration: const InputDecoration(labelText: 'Note'),
-            ),
-            const SizedBox(height: 16.0),
-            const Text(
-              'Tasks for this Goal',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _navigateToAddTask,
-              child: const Text('Add Task'),
-            ),
-            const SizedBox(height: 16.0),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  String startDate = _tasks[index]['startDate'] != null
-                      ? '${_tasks[index]['startDate'].year}-${_tasks[index]['startDate'].month}-${_tasks[index]['startDate'].day}'
-                      : 'No start date';
-                  String endDate = _tasks[index]['endDate'] != null
-                      ? '${_tasks[index]['endDate'].year}-${_tasks[index]['endDate'].month}-${_tasks[index]['endDate'].day}'
-                      : 'No end date';
-                  return ListTile(
-                    title: Text(_tasks[index]['task']),
-                    subtitle: Text(
-                        'Repeat Every: ${_tasks[index]['repeatInterval']} days\nDate: $startDate - $endDate'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      color: Colors.black,
-                      onPressed: () {
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Card(
+            elevation: 2,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title Field
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Goal Title',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      onChanged: (value) => _checkIfGoalIsComplete(),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Date Selection
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                _selectDate(context, _startDate, (date) {
+                              setState(() {
+                                _startDate = date;
+                              });
+                            }),
+                            icon: const Icon(Icons.calendar_today),
+                            label: Text(
+                              _startDate == null
+                                  ? 'Start Date'
+                                  : DateFormat('MMM dd, yyyy')
+                                      .format(_startDate!),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16.0),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                _selectDate(context, _endDate, (date) {
+                              setState(() {
+                                _endDate = date;
+                              });
+                            }),
+                            icon: const Icon(Icons.calendar_today),
+                            label: Text(
+                              _endDate == null
+                                  ? 'End Date'
+                                  : DateFormat('MMM dd, yyyy')
+                                      .format(_endDate!),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Category Field
+                    TextField(
+                      controller: _categoryController,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Description Field
+                    TextField(
+                      controller: _descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      maxLines: 7,
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Note Field
+                    TextField(
+                      controller: _noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Note',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Recurring Task Checkbox
+                    CheckboxListTile(
+                      title: const Text("Is this a recurring task?"),
+                      value: _isRecurring,
+                      onChanged: (bool? value) {
                         setState(() {
-                          _tasks.removeAt(index);
-                          _checkIfGoalIsComplete();
+                          _isRecurring = value ?? false;
                         });
                       },
                     ),
-                  );
-                },
+                    const SizedBox(height: 16.0),
+
+                    // Tasks for this Goal
+                    const Text(
+                      'Tasks for this Goal',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Add Task Button
+                    ElevatedButton(
+                      onPressed: _navigateToAddTask,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7BC043),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Add Task'),
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Task List
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _tasks.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8.0),
+                          child: ListTile(
+                            title: Text(
+                              _tasks[index]['task'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Repeat Every: ${_tasks[index]['repeatInterval']} days\n'
+                              'Date: ${DateFormat('MMM dd, yyyy').format(_tasks[index]['startDate'])} - '
+                              '${DateFormat('MMM dd, yyyy').format(_tasks[index]['endDate'])}',
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  _tasks.removeAt(index);
+                                  _checkIfGoalIsComplete();
+                                });
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
