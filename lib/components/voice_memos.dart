@@ -57,6 +57,7 @@ class _VoiceMemoState extends State<VoiceMemo> {
     setState(() {});
   }
 
+// function to add date and time before voice memo text
   String _formatDateTime(DateTime now) {
     final date = "${now.day}/${now.month}/${now.year}";
     final hour =
@@ -67,7 +68,7 @@ class _VoiceMemoState extends State<VoiceMemo> {
     return "$date $time";
   }
 
-  // Handle speech recognition results
+  // Handle speech recognition results and add date and time before voice memo text
   void _onSpeechResult(SpeechRecognitionResult result) {
     if (result.finalResult) {
       final timestamp = _formatDateTime(DateTime.now());
@@ -142,6 +143,7 @@ class _VoiceMemoState extends State<VoiceMemo> {
               ),
             ),
           ] else ...[
+            // if there is no text, show the text field
             Expanded(
               child: TextField(
                 controller: speech,
@@ -178,6 +180,8 @@ class _VoiceMemoState extends State<VoiceMemo> {
             ),
           ],
           const SizedBox(width: 12),
+
+          // if there is text, show save button and update firebase
           if (speech.text.isNotEmpty && widget.event != null) ...[
             IconButton(
               onPressed: () {
@@ -190,6 +194,8 @@ class _VoiceMemoState extends State<VoiceMemo> {
               icon: const Icon(Icons.save),
             ),
           ],
+
+          // show edit button if there is text and the text field is not shown
           if (!_showTextField && speech.text.isNotEmpty) ...[
             IconButton(
               onPressed: () => setState(() => _showTextField = true),
@@ -197,6 +203,8 @@ class _VoiceMemoState extends State<VoiceMemo> {
               icon: const Icon(Icons.edit),
             ),
           ],
+
+          // always show record button
           IconButton(
             onPressed: _speechEnabled
                 ? (_speechToText.isNotListening

@@ -4,7 +4,7 @@ import 'event_model.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// the global state for handling all events within our app
+// the global state for handling all firebase events within our app
 class EventProvider extends ChangeNotifier {
   // List of events
   List<EventModel> _events = [];
@@ -59,7 +59,7 @@ class EventProvider extends ChangeNotifier {
     }
   }
 
-  // Method to add a new event
+  // Method to add a new event with calendar data from calendar view, note, tags, voice memos, reucurring tasks
   Future<void> addEvent(CalendarEventData eventData,
       {String? note,
       List<String>? tags,
@@ -134,11 +134,10 @@ class EventProvider extends ChangeNotifier {
   // method to update a streak if the task is completed within a day, then streak of a month and year
   Future<void> updateStreak(String eventId) async {
     final today = DateTime.now();
-
     final index = _events.indexWhere((element) => element.id == eventId);
-
     final event = _events[index];
 
+    // if the task has been completed before, check if the difference in days is 1 day
     if (event.lastCompletedDate != null) {
       final differenceInDays =
           today.difference(event.lastCompletedDate!).inDays;
