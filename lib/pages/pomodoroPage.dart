@@ -38,6 +38,7 @@ import 'package:flutter/widgets.dart';
         shadowColor: Colors.transparent,
         margin: const EdgeInsets.all(8.0),
         child: SizedBox.expand(
+        child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
               Padding(
@@ -207,6 +208,7 @@ import 'package:flutter/widgets.dart';
               ]
           ),
         ),
+      )
       );
     }
   }

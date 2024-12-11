@@ -145,8 +145,6 @@ class _RootLayoutState extends State<RootLayout> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
           BottomNavigationBarItem(
             icon: Icon(Icons.home, size: 30),
             label: 'Home',
@@ -167,10 +165,6 @@ class _RootLayoutState extends State<RootLayout> {
             icon: Icon(Icons.checklist_rtl_rounded, size: 30),
             label: 'Progress',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today, size: 30), label: ''),    
-          BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
           BottomNavigationBarItem(
               icon: Icon(Icons.folder, size: 30), label: ''),
           BottomNavigationBarItem(
