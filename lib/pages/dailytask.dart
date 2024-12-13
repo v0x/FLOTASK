@@ -4,7 +4,6 @@ import 'add_goal.dart';
 import 'package:flotask/utils/firestore_helpers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-//stateful widget for the Taskpage
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
 
@@ -12,18 +11,16 @@ class TaskPage extends StatefulWidget {
   _TaskPageState createState() => _TaskPageState();
 }
 
-//state class for TaskPage
 class _TaskPageState extends State<TaskPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  //initialze the tab controller with 2 tabs
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // Three tabs
   }
 
-  //dispose the tab controller when not needed
   @override
   void dispose() {
     _tabController.dispose();
@@ -43,7 +40,6 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
-  //helper function to update the completion status of a specific recurrence
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
@@ -108,7 +104,6 @@ class _TaskPageState extends State<TaskPage>
                               .doc(task.id)
                               .collection('recurrences')
                               .where('status', isEqualTo: status)
-                              //.where('date', isEqualTo: Timestamp.fromDate(DateTime.now()))
                               .where('date', isEqualTo: DateTime.parse(today))
                               .snapshots(),
                           builder: (context, recurrenceSnapshot) {
@@ -128,6 +123,14 @@ class _TaskPageState extends State<TaskPage>
                                     recurrence['status'] == 'completed';
 
                                 return ListTile(
+                                  onLongPress: () async {
+                                    if (status == 'paused') {
+                                      await recurrence.reference.update({'status': 'todo'});
+                                    } else {
+                                      await recurrence.reference.update({'status': 'paused'});
+                                    }
+                                    setState(() {});
+                                  },
                                   leading: Checkbox(
                                     value: isCompleted,
                                     onChanged: (bool? value) {
@@ -181,11 +184,8 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
-  //work review3
-  // Function to edit a task
   Future<void> _editTask(
       DocumentReference taskRef, Map<String, dynamic> currentTaskData) async {
-    // Create controllers and variables with current task values
     final TextEditingController _taskController =
         TextEditingController(text: currentTaskData['task']);
     TimeOfDay? _selectedTime = currentTaskData['selectedTime'] != null
@@ -220,7 +220,6 @@ class _TaskPageState extends State<TaskPage>
               content: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Task Name Input
                     TextField(
                       controller: _taskController,
                       decoration: const InputDecoration(
@@ -228,8 +227,6 @@ class _TaskPageState extends State<TaskPage>
                       ),
                     ),
                     const SizedBox(height: 16.0),
-
-                    // Time Selection
                     const Text(
                       'Time',
                       style: TextStyle(fontSize: 18),
@@ -252,18 +249,15 @@ class _TaskPageState extends State<TaskPage>
                             setState(() {
                               _selectedOption = newValue!;
                               if (newValue == 'Specific time') {
-                                _selectTime(context,
-                                    setState); // Open time picker if "Specific time" is selected
+                                _selectTime(context, setState);
                               } else {
-                                _selectedTime = null; // Reset the selected time
+                                _selectedTime = null;
                               }
                             });
                           },
                         ),
                       ],
                     ),
-
-                    // Display the selected time if "Specific time" is chosen
                     if (_selectedOption == 'Specific time' &&
                         _selectedTime != null)
                       Text('Selected Time: ${_selectedTime!.format(context)}'),
@@ -285,13 +279,11 @@ class _TaskPageState extends State<TaskPage>
                 ),
                 TextButton(
                   onPressed: () async {
-                    // Update the task data in Firestore
                     await taskRef.update({
                       'task': _taskController.text,
-                      //'repeatInterval': _repeatIntervalNotifier.value,
                       'selectedTime': _selectedTime != null
                           ? '${_selectedTime!.hour}:${_selectedTime!.minute}'
-                          : null, // Save selected time if any, otherwise set null
+                          : null,
                     });
                     Navigator.of(context).pop();
                   },
@@ -305,7 +297,6 @@ class _TaskPageState extends State<TaskPage>
     );
   }
 
-  // Function to delete a task
   Future<void> _deleteTask(DocumentReference taskRef) async {
     await showDialog(
       context: context,
@@ -337,11 +328,10 @@ class _TaskPageState extends State<TaskPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar with title and tabs
       appBar: AppBar(
         title: Center(
           child: Text(
-            "Daily tasks", //page title
+            "Daily tasks",
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -354,30 +344,29 @@ class _TaskPageState extends State<TaskPage>
           tabs: const [
             Tab(text: 'To-do'),
             Tab(text: 'Completed'),
+            Tab(text: 'Paused'),
           ],
         ),
       ),
-      //content of each tab
       body: TabBarView(
-        controller: _tabController, //controller for tabs
+        controller: _tabController,
         children: [
-          _buildTaskList('todo'), // Fetch and display "To-do" tasks
-          _buildTaskList('completed'), // Fetch and display "Completed" tasks
+          _buildTaskList('todo'),
+          _buildTaskList('completed'),
+          _buildTaskList('paused'),
         ],
       ),
-      //floating action button to ass a new goal
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(10.0),
         child: FloatingActionButton(
           onPressed: () {
-            //navigate to add goal page when clicking on the button
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const AddGoalPage()),
             );
           },
           backgroundColor: Colors.black,
-          shape: const CircleBorder(), //circle button shape
+          shape: const CircleBorder(),
           child: const Icon(
             Icons.add,
             color: Colors.white,
