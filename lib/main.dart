@@ -18,7 +18,7 @@ import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
-import 'package:flotask/pages/task.dart';
+import 'package:flotask/pages/dailytask.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
