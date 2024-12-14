@@ -46,7 +46,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     }
   }
 
-  void _initialize(){
+  void _initialize() {
     _workSession = false;
     _timer?.cancel();
     setState(() {
@@ -56,17 +56,17 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     _workTimer();
   }
 
-  double _currProgress(){
-    int total = _workSession ? widget.workTime*60 : widget.breakTime*60;
-    return (total-_timeSpecified.inSeconds)/total;
+  double _currProgress() {
+    int total = _workSession ? widget.workTime * 60 : widget.breakTime * 60;
+    return (total - _timeSpecified.inSeconds) / total;
   }
 
   String get currMinutes {
-    return '${(_timeSpecified.inSeconds~/60).toString().padLeft(2, '0')}';
+    return '${(_timeSpecified.inSeconds ~/ 60).toString().padLeft(2, '0')}';
   }
 
   String get currSeconds {
-    return '${(_timeSpecified.inSeconds%60).toString().padLeft(2, '0')}';
+    return '${(_timeSpecified.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
   void _workTimer() {
@@ -83,30 +83,30 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     _timeSpecified = Duration(minutes: widget.breakTime);
   }
 
-  void start(){
+  void start() {
     setState(() {
       _isRunning = true;
-    });  
-      _timer = Timer.periodic(Duration(seconds: 1), (timer) { 
-        setState(() {
-          if (_timeSpecified.inSeconds > 0) {
-            _timeSpecified -= Duration(seconds: 1);
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_timeSpecified.inSeconds > 0) {
+          _timeSpecified -= Duration(seconds: 1);
+        } else {
+          setState(() {
+            _isRunning = false;
+          });
+          _timer?.cancel();
+          if (_breakTime) {
+            reset();
           } else {
-            setState(() {
-              _isRunning = false;
-            });
-            _timer?.cancel();
-            if(_breakTime) {
-              reset();
-            } else {
-              _breakTimer();
-            }
+            _breakTimer();
           }
-        });
+        }
       });
+    });
   }
 
-  void pause(){
+  void pause() {
     setState(() {
       _isRunning = false;
     });
@@ -134,68 +134,77 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   }
 
   @override
-    Widget build(BuildContext context) {
-      return Card(
-        shadowColor: Colors.transparent,
-        //elevation: 0,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: CircularProgressIndicator(
-                    value: _currProgress(),
-                    strokeWidth: 8,
-                    color: widget.taskColor,
-                    backgroundColor: widget.taskColor.withOpacity(0.5),
+  Widget build(BuildContext context) {
+    return Card(
+      shadowColor: Colors.transparent,
+      //elevation: 0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: CircularProgressIndicator(
+                  value: _currProgress(),
+                  strokeWidth: 8,
+                  color: widget.taskColor,
+                  backgroundColor: widget.taskColor.withOpacity(0.5),
+                ),
+              ),
+              Column(
+                children: <Widget>[
+                  if (_breakTime)
+                    Text("Break Time!",
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: widget.taskColor)),
+                  Text(
+                    '$currMinutes:$currSeconds',
+                    style: TextStyle(
+                      fontSize: 48,
+                      color: widget.taskColor,
+                    ),
                   ),
-                ),
-                Column(
-                  children: <Widget>[
-                    if (_breakTime) Text("Break Time!", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: widget.taskColor)),
-                    Text(
-                      '$currMinutes:$currSeconds',
-                      style: TextStyle(
-                        fontSize: 48,
-                        color: widget.taskColor,
-                        ),
-                    ),
-                  ],
-                ),
-              ],
-        ),
-        SizedBox(height: 20),
-        ElevatedButton(
-                      onPressed: buttonPressed,
-                      child: Icon(_isRunning ? Icons.pause : Icons.play_arrow,
-                      color: widget.taskColor,
-                      size: 55,),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.taskColor.withOpacity(0.3),
-                        elevation: 0,
-                        shape: CircleBorder(),
-                        minimumSize: Size(90, 90),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: reset,
-                      child: Icon(Icons.replay,
-                      color: widget.taskColor,
-                      size: 30,),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.taskColor.withOpacity(0.3),
-                        elevation: 0,
-                        shape: CircleBorder(),
-                        minimumSize: Size(60, 60),
-                      ),
-                    ),
-          ],
-        ),
-      );
-    }
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: buttonPressed,
+            child: Icon(
+              _isRunning ? Icons.pause : Icons.play_arrow,
+              color: widget.taskColor,
+              size: 55,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.taskColor.withOpacity(0.3),
+              elevation: 0,
+              shape: CircleBorder(),
+              minimumSize: Size(90, 90),
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: reset,
+            child: Icon(
+              Icons.replay,
+              color: widget.taskColor,
+              size: 30,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.taskColor.withOpacity(0.3),
+              elevation: 0,
+              shape: CircleBorder(),
+              minimumSize: Size(60, 60),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

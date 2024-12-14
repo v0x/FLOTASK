@@ -7,48 +7,71 @@ class Menu extends StatelessWidget {
   final ScreenshotController screenshotController; // Accept ScreenshotController as a parameter
 
   Menu({required this.screenshotController}); // Constructor to initialize screenshotController
+import 'package:flotask/components/resource.dart';
+import 'package:flotask/components/settings.dart';
+
+
+class Menu extends StatelessWidget {
+  final VoidCallback toggleTheme; // Add toggle function
+  final bool isDarkMode; // Add theme mode state
+
+  Menu({required this.toggleTheme, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
     final safeArea = EdgeInsets.only(top: MediaQuery.of(context).viewPadding.top);
 
     return Container(
-      width: MediaQuery.of(context).size.width * 0.6, // Sidebar width set to 60% of screen
+      width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3), // Transparent off-white background
+            color: Colors.white.withOpacity(0.3),
           ),
           child: Column(
             children: [
-              // Sidebar header with padding, always visible
               Container(
                 padding: EdgeInsets.symmetric(vertical: 24).add(safeArea),
                 width: double.infinity,
                 child: buildHeader(),
               ),
-              const Divider(), // Divider line below header
-              // Menu items below the header, using a ListView for scrollable content
+              const Divider(),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     buildMenuItem(
+                      context: context, //DM
                       icon: Icons.share,
                       title: 'Share',
                       onTap: () => _shareProgress(context), // Call the share function
                     ),
                     buildMenuItem(
+                      context: context, //DM
                       icon: Icons.book,
                       title: 'Resources',
-                      onTap: () => print('Resources clicked'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ResourcesPage()), // Navigating to ResourcePage
+                      ),
                     ),
                     buildMenuItem(
+                      context: context, //DM
                       icon: Icons.settings,
                       title: 'Settings',
-                      onTap: () => print('Settings clicked'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SettingsPage()), // Navigating to SettingsPage
+                      ),
                     ),
                     buildMenuItem(
+                      context: context, //DM
+                      icon: isDarkMode ? Icons.light_mode : Icons.dark_mode, 
+                      title: isDarkMode ? 'Light Mode' : 'Dark Mode', // Toggle label
+                      onTap: toggleTheme,
+                    ),
+                    buildMenuItem(
+                      context: context, //DM
                       icon: Icons.exit_to_app,
                       title: 'Log Out',
                       onTap: () => print('Log Out clicked'),
@@ -63,29 +86,26 @@ class Menu extends StatelessWidget {
     );
   }
 
-  // Builds the header for the menu
   Widget buildHeader() {
     return const Padding(
       padding: EdgeInsets.only(left: 15.0),
       child: Text(
         'FloTask',
-        style: TextStyle(fontSize: 24, color: Color(0xFF8D6E63)), // Using color directly for consistency
+        style: TextStyle(fontSize: 24), //dark mode
       ),
     );
   }
 
-  // Builds individual menu items with icon and label
-  Widget buildMenuItem({required IconData icon, required String title, required VoidCallback onTap}) {
-    final color = const Color(0xFF8D6E63); // Light brown consistent with theme
-    return Material(
-      color: Colors.transparent, // Keeps the menu background transparent
-      child: ListTile(
-        leading: Icon(icon, size: 28, color: color), // Icon with adjusted size
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 16, color: color), // Simple, clean font styling
-        ),
-        onTap: onTap, // Executes action when menu item is tapped
+ Widget buildMenuItem({required BuildContext context, required IconData icon, required String title, required VoidCallback onTap}) {
+  // Extract color from the bodyLarge TextStyle
+
+  return Material(
+    color: Colors.transparent,
+    child: ListTile(
+      leading: Icon(icon, size: 28, color: Theme.of(context).textTheme.bodyLarge!.color ?? Colors.black), // Apply color from the theme //dark mode
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyLarge, //dark theme
       ),
     );
   }
@@ -168,4 +188,8 @@ class Menu extends StatelessWidget {
       },
     );
   }
+      onTap: onTap,
+    ),
+  );
+}
 }
