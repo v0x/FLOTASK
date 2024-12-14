@@ -10,10 +10,9 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/providers/achievement_provider.dart';
 
 // COMPONENTS
-import 'package:flotask/components/notifications.dart';
+// import 'package:flotask/components/notifications.dart';
 
 // SCREENS
-
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
