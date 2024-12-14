@@ -48,6 +48,12 @@ class _CalendarPageState extends State<CalendarPage>
     setState(() {}); // Trigger a rebuild to reflect the changes
   }
 
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
   @override
   Widget build(BuildContext context) {
     // get the state of the events with this line
@@ -88,9 +94,17 @@ class _CalendarPageState extends State<CalendarPage>
 
                       // route to a detailed list view of each task
                       body: ListView.builder(
-                        itemCount: eventProvider.events.length,
+                        itemCount: eventProvider.events
+                            .where((event) => isSameDay(event.event.date, date))
+                            .length,
                         itemBuilder: (context, index) {
-                          final event = eventProvider.events[index];
+                          // Get filtered events list
+                          final filteredEvents = eventProvider.events
+                              .where(
+                                  (event) => isSameDay(event.event.date, date))
+                              .toList();
+                          final event = filteredEvents[index];
+
                           return ListTile(
                             title: Text(event.event.title),
                             subtitle: Text(

@@ -13,7 +13,7 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
-import 'package:flotask/pages/dailytask.dart';
+import 'package:flotask/pages/task.dart';
 import 'package:flotask/pages/progress.dart';
 import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 
