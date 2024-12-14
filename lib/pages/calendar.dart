@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flotask/pages/events.dart';
 
 // the calendar widget to show the MOnth view, Week View, and day view. There are also onTap, onEventTap, and on DateTap functions to route to different pages
 class CalendarPage extends StatefulWidget {
@@ -62,6 +63,19 @@ class _CalendarPageState extends State<CalendarPage>
     return Scaffold(
         appBar: AppBar(
           title: Text("Calendar View"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.event),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TaskPage(),
+                  ),
+                );
+              },
+            ),
+          ],
           bottom: TabBar(
             controller: tabController,
             tabs: [Text("Month View"), Text("Week View"), Text("Day View")],
