@@ -170,44 +170,7 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-// function to find days in month
-  // int daysInMonth(DateTime date) {
-  //   var beginningNextMonth = (date.month < 12)
-  //       ? DateTime(date.year, date.month + 1, 1)
-  //       : DateTime(date.year + 1, 1, 1);
-  //   return beginningNextMonth.subtract(Duration(days: 1)).day;
-  // }
-
-  // method to archive note
-  // Future<void> archiveNote(String eventId) async {
-  //   final index = _events.indexWhere((element) => element.id == eventId);
-
-  //   if (_events[index].isArchived == false) {
-  //     _events[index].isArchived = true;
-  //   }
-
-  //   await FirebaseFirestore.instance
-  //       .collection('events')
-  //       .doc(_events[index].id)
-  //       .update({'isCompleted': _events[index].isArchived});
-  //   notifyListeners();
-  // }
-
-  // // method to unarchive note
-  // Future<void> unarchiveNote(String eventId) async {
-  //   final index = _events.indexWhere((element) => element.id == eventId);
-
-  //   if (_events[index].isArchived == true) {
-  //     _events[index].isArchived = false;
-  //   }
-  //   notifyListeners();
-
-  //   await FirebaseFirestore.instance
-  //       .collection('events')
-  //       .doc(_events[index].id)
-  //       .update({'isCompleted': _events[index].isArchived});
-  // }
-
+  // method to update archived status
   Future<void> updateArchivedStatus(String eventId, bool isArchived) async {
     final index = _events.indexWhere((element) => element.id == eventId);
 
@@ -247,20 +210,10 @@ class EventProvider extends ChangeNotifier {
         final differenceInDays =
             today.difference(event.lastCompletedDate!).inDays;
 
-        // Check if we need to roll back the streak (only if the task was completed today)
+        // if the task was completed today, reduce the day streak
         if (differenceInDays == 0) {
           // Reduce day streak
           event.dayStreak = event.dayStreak > 0 ? event.dayStreak - 1 : 0;
-
-          // If day streak reaches below days in month, adjust the month streak
-          // if (event.dayStreak < 30 && event.monthStreak > 0) {
-          //   event.monthStreak--;
-
-          //   // If month streak is undone, adjust the year streak if necessary
-          //   if (event.monthStreak < 12 && event.yearStreak > 0) {
-          //     event.yearStreak--;
-          //   }
-          // }
 
           // Set last completed date to null to indicate it's undone
           event.lastCompletedDate = null;
@@ -314,7 +267,6 @@ class EventProvider extends ChangeNotifier {
 
       await docRef.update(updates);
 
-      // Update local state
       final index = _events.indexWhere((e) => e.id == eventId);
       if (index != -1) {
         final event = _events[index];

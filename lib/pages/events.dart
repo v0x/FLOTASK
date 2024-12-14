@@ -40,6 +40,7 @@ class _TaskPageState extends State<TaskPage>
     super.dispose();
   }
 
+  // logic to reset recurring tasks for new day
   Future<void> _resetRecurringTasksForNewDay(
       EventProvider eventProvider) async {
     final now = DateTime.now();
@@ -61,6 +62,7 @@ class _TaskPageState extends State<TaskPage>
     }
   }
 
+// logic to edit an event
   Future<void> _editTask(EventModel event) async {
     final eventController = EventController()..addAll([event.event]);
 
