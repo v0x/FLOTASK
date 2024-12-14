@@ -107,7 +107,7 @@ class Notifications{
           priority: Priority.high,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: task.daily ? DateTimeComponents.time : null, 
@@ -127,7 +127,7 @@ class Notifications{
           priority: Priority.high,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: task.daily ? DateTimeComponents.time : null, 
