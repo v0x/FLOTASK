@@ -60,48 +60,54 @@ class _RootLayoutState extends State<RootLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: [
-          HomePage(pageIndex: currentPageIndex),
-          TaskPage(),
-          CalendarPage(),
-          PomodoroPage(),
-          UserProfilePage(), // Add UserProfilePage as a screen
-          AchievementPage(),
-        ][currentPageIndex],
-        bottomNavigationBar: NavigationBar(
-          onDestinationSelected: (int index) {
-            setState(() {
-              currentPageIndex = index;
-            });
-          },
-          selectedIndex: currentPageIndex,
-          indicatorColor: const Color.fromARGB(255, 7, 197, 255),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.task),
-              label: 'Tasks',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_month_sharp),
-              label: 'Calendar',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.timer_outlined),
-              label: 'Pomodoro',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.checklist_rtl_rounded),
-              label: 'Progress',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person),
-              label: 'Profile', // Add profile icon
-            ),
-          ],
-        ));
+      body: [
+        HomePage(pageIndex: currentPageIndex),
+        TaskPage(),
+        CalendarPage(),
+        PomodoroPage(),
+        UserProfilePage(), // Add UserProfilePage as a screen
+        AchievementPage(),
+      ][currentPageIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentPageIndex,
+        onTap: (index) => setState(() => currentPageIndex = index),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.brown.shade700,
+        unselectedItemColor: Colors.brown.shade300,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, size: 30),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.task, size: 30),
+            label: 'Task',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today, size: 30),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm, size: 30),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: 'Progress',
+          ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.emoji_events, size: 30), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.location_pin, size: 30), label: ''),
+        ],
+      ),
+    );
   }
 }
