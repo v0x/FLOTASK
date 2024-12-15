@@ -18,19 +18,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScreenshotController _screenshotController = ScreenshotController(); // Screenshot controller
-  late Timer _timer;
-  int _currentStage = 0;
   SMIInput<double>? _growInput;
+  int _currentStage = 0;
 
   @override
   void initState() {
     super.initState();
-    _startLoop();
+    _setAnimationToStage1(); // Set animation to stage 1 on initialization
   }
 
   @override
   void dispose() {
-    _timer.cancel();
     super.dispose();
   }
 
@@ -51,24 +49,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  void _startLoop() {
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+  void _setAnimationToStage1() {
+    if (_growInput != null) {
       setState(() {
-        if (_growInput != null) {
-          if (_currentStage < 3) {
-            _currentStage += 1;
-            _growInput!.value = _currentStage.toDouble();
-            print('Animation updated to: Stage $_currentStage');
-          } else {
-            _growInput!.value = 0;
-            _currentStage = 0;
-            print('Animation reset to: Level Null');
-          }
-        } else {
-          print('grow input is null');
-        }
+        _growInput!.value = 1; // Set animation to Stage 1
+        _currentStage = 1;
+        print('Animation set to: Stage 1');
       });
-    });
+    } else {
+      print('grow input is null');
+    }
   }
 
   @override
