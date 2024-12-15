@@ -3,11 +3,11 @@
 A new Flutter project
 
 ## CONTRIBUTORS
-v0x: Matthew Chung
-Nhi3456: Nhi Tran
-EsraaElnaggar01: Esraa Elnaggar
-Sarsa000: Sarsa Roka
-DIceEvYo: Dev Paul
+- v0x: Matthew Chung
+- Nhi3456: Nhi Tran
+- EsraaElnaggar01: Esraa Elnaggar
+- Sarsa000: Sarsa Roka
+- DIceEvYo: Dev Paul
 
 ## To run:
 
