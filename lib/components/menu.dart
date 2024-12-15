@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:typed_data'; // Import for Uint8List
-
-class Menu extends StatelessWidget {
-  final ScreenshotController screenshotController; // Accept ScreenshotController as a parameter
-
-  Menu({required this.screenshotController}); // Constructor to initialize screenshotController
 import 'package:flotask/components/resource.dart';
 import 'package:flotask/components/settings.dart';
 
-
 class Menu extends StatelessWidget {
+  final ScreenshotController screenshotController; // Accept ScreenshotController as a parameter
   final VoidCallback toggleTheme; // Add toggle function
   final bool isDarkMode; // Add theme mode state
 
-  Menu({required this.toggleTheme, required this.isDarkMode});
+  Menu({
+    required this.screenshotController,
+    required this.toggleTheme,
+    required this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,37 +40,37 @@ class Menu extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     buildMenuItem(
-                      context: context, //DM
+                      context: context,
                       icon: Icons.share,
                       title: 'Share',
-                      onTap: () => _shareProgress(context), // Call the share function
+                      onTap: () => _shareProgress(context),
                     ),
                     buildMenuItem(
-                      context: context, //DM
+                      context: context,
                       icon: Icons.book,
                       title: 'Resources',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => ResourcesPage()), // Navigating to ResourcePage
+                        MaterialPageRoute(builder: (context) => ResourcesPage()),
                       ),
                     ),
                     buildMenuItem(
-                      context: context, //DM
+                      context: context,
                       icon: Icons.settings,
                       title: 'Settings',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SettingsPage()), // Navigating to SettingsPage
+                        MaterialPageRoute(builder: (context) => SettingsPage()),
                       ),
                     ),
                     buildMenuItem(
-                      context: context, //DM
-                      icon: isDarkMode ? Icons.light_mode : Icons.dark_mode, 
-                      title: isDarkMode ? 'Light Mode' : 'Dark Mode', // Toggle label
+                      context: context,
+                      icon: isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                      title: isDarkMode ? 'Light Mode' : 'Dark Mode',
                       onTap: toggleTheme,
                     ),
                     buildMenuItem(
-                      context: context, //DM
+                      context: context,
                       icon: Icons.exit_to_app,
                       title: 'Log Out',
                       onTap: () => print('Log Out clicked'),
@@ -91,21 +90,30 @@ class Menu extends StatelessWidget {
       padding: EdgeInsets.only(left: 15.0),
       child: Text(
         'FloTask',
-        style: TextStyle(fontSize: 24), //dark mode
+        style: TextStyle(fontSize: 24),
       ),
     );
   }
 
- Widget buildMenuItem({required BuildContext context, required IconData icon, required String title, required VoidCallback onTap}) {
-  // Extract color from the bodyLarge TextStyle
-
-  return Material(
-    color: Colors.transparent,
-    child: ListTile(
-      leading: Icon(icon, size: 28, color: Theme.of(context).textTheme.bodyLarge!.color ?? Colors.black), // Apply color from the theme //dark mode
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyLarge, //dark theme
+  Widget buildMenuItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Icon(
+          icon,
+          size: 28,
+          color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        onTap: onTap,
       ),
     );
   }
@@ -113,13 +121,12 @@ class Menu extends StatelessWidget {
   // Function to capture and share progress
   void _shareProgress(BuildContext context) async {
     try {
-      final image = await screenshotController.capture(); // Capture the screenshot
+      final image = await screenshotController.capture();
       if (image != null) {
-        // Show the preview dialog with the captured image
         _showPreviewDialog(context, image);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not capture the flower animation. Please try again.')),
+          SnackBar(content: Text('Could not capture the screenshot. Please try again.')),
         );
       }
     } catch (e) {
@@ -162,7 +169,7 @@ class Menu extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text(
                 'Cancel',
@@ -171,12 +178,11 @@ class Menu extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                // Proceed to share the image
                 await Share.shareXFiles(
                   [XFile.fromData(image, name: 'garden.png')],
                   text: 'Check out my garden progress!',
                 );
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text(
                 'Share',
@@ -188,8 +194,4 @@ class Menu extends StatelessWidget {
       },
     );
   }
-      onTap: onTap,
-    ),
-  );
-}
 }

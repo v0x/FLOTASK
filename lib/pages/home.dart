@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'package:flotask/components/menu.dart';
+import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
 import 'dart:async';
 import 'package:screenshot/screenshot.dart';
 
@@ -14,21 +15,23 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScreenshotController _screenshotController = ScreenshotController(); // Screenshot controller
   late Timer _timer;
   int _currentStage = 0;
   SMIInput<double>? _growInput;
-  final ScreenshotController _screenshotController = ScreenshotController(); // Screenshot controller
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); 
 
   @override
   void initState() {
     super.initState();
     _startLoop();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   void _onRiveInit(Artboard artboard) {
@@ -37,11 +40,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       artboard.addController(controller);
       _growInput = controller.findInput<double>('Grow');
 
-      if (_growInput == null) {
-        print('Error: grow input not found');
-      } else {
-        print('grow input initialized');
+      if (_growInput != null) {
         _growInput!.value = 0; // Start at Level Null
+        print('grow input initialized');
+      } else {
+        print('Error: grow input not found');
       }
     } else {
       print('Error: StateMachineController not found');
@@ -53,12 +56,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       setState(() {
         if (_growInput != null) {
           if (_currentStage < 3) {
-            // Move to the next stage
             _currentStage += 1;
             _growInput!.value = _currentStage.toDouble();
             print('Animation updated to: Stage $_currentStage');
           } else {
-            // After reaching Stage 3, reset to "Level Null"
             _growInput!.value = 0;
             _currentStage = 0;
             print('Animation reset to: Level Null');
@@ -68,32 +69,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         }
       });
     });
-    _controller = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: const Offset(0, -0.1),
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-=======
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Menu(screenshotController: _screenshotController), // Pass ScreenshotController
+      drawer: Menu(
+        toggleTheme: widget.toggleTheme,
+        isDarkMode: widget.isDarkMode,
+        screenshotController: _screenshotController, // Pass ScreenshotController
+      ),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFE6E6),
+        backgroundColor: const Color(0xFFFFE6E6), // Set the color to match the pink background
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32),
@@ -102,28 +90,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         actions: [
           IconButton(
             icon: Icon(Icons.person_outline_rounded, size: 36, color: Colors.black.withOpacity(0.7)),
-            onPressed: () => print('Profile clicked'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserProfilePage(),
+                ),
+              );
+            },
           ),
         ],
-      drawer: Menu(toggleTheme: widget.toggleTheme, isDarkMode: widget.isDarkMode), 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0, 
-        leading: IconButton(
-          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32), 
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
       ),
       body: Screenshot(
         controller: _screenshotController, // Wrap content with Screenshot widget
-        child: Stack(
-          children: [
-            RiveAnimation.asset(
-              'assets/growing_plant.riv',
-              fit: BoxFit.cover,
-              onInit: _onRiveInit,
-            ),
-          ],
+        child: RiveAnimation.asset(
+          'assets/growing_plant.riv',
+          fit: BoxFit.cover,
+          onInit: _onRiveInit,
         ),
       ),
       floatingActionButton: Padding(
@@ -179,43 +162,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ],
         );
       },
-    );
-  }
-}
-            const SizedBox(height: 20), 
-            SlideTransition(position: _slideAnimation, child: _buildMessageCard()),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageCard() {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBE9E7).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Text(
-        'Hello',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 18,
-          color: Colors.black.withOpacity(0.7),
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }

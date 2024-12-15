@@ -17,7 +17,7 @@ dependencies:
   markdown_editor_plus: ^0.2.15
   provider: ^6.1.2
   uuid: ^4.5.0
-  rive: ^0.9.0 # Ensure this matches your animation usage
+  rive: ^0.13.20 # Ensure this matches your animation usage
   screenshot: ^3.0.0
   share_plus: ^10.1.2
   flutter_slidable: ^3.1.1
@@ -30,9 +30,6 @@ dependencies:
   intl: ^0.20.1
   encrypt: ^5.0.0
   shared_preferences: ^2.0.15
-  markdown_editor_plus: ^0.2.15
-  provider: ^6.1.2
-  uuid: ^4.5.0
   speech_to_text: ^7.0.0
 
    # Audio recording

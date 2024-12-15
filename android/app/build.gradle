@@ -28,7 +28,7 @@ if (flutterVersionName == null) {
 android {
     namespace "com.example.flotask"
     compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    ndkVersion "25.1.8937393" // Explicitly set the NDK version
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
