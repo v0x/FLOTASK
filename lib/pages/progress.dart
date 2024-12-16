@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'tasklist.dart'; // Import TaskListPage
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -76,7 +77,7 @@ class _ProgressPageState extends State<ProgressPage> {
                       await _deleteGoal(
                           context, goalRef); // Delete the goal if user confirms
                       Navigator.of(context).pop();
-                      Navigator.of(context).pop();
+                      //Navigator.of(context).pop();
                     },
                     child: const Text('Delete'),
                   ),
@@ -164,83 +165,99 @@ class _ProgressPageState extends State<ProgressPage> {
           ),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('goals').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+      body: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, usersnapshot) {
+          if (!usersnapshot.hasData) {
             return const Center(
                 child: CircularProgressIndicator()); //show loading indicator
           }
 
-          //final goals = snapshot.data!.docs;
-          final goals = snapshot.data!.docs.where((goal) {
-            //search bar WR4
-            //filter goals based on the search query
-            final title =
-                (goal['title'] ?? '').toString().toLowerCase(); //search bar WR4
-            final category = (goal['category'] ?? '')
-                .toString()
-                .toLowerCase(); //search bar WR4
-            final note = (goal['note'] ?? '').toString().toLowerCase();
-            return title.contains(_searchQuery) ||
-                category.contains(_searchQuery) ||
-                note.contains(_searchQuery); //search bar WR4
-          }).toList();
+          final String userId = usersnapshot.data!.uid;
+          return StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .collection('goals')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(
+                    child:
+                        CircularProgressIndicator()); //show loading indicator
+              }
+              //final goals = snapshot.data!.docs;
+              final goals = snapshot.data!.docs.where((goal) {
+                //search bar WR4
+                //filter goals based on the search query
+                final title = (goal['title'] ?? '')
+                    .toString()
+                    .toLowerCase(); //search bar WR4
+                final category = (goal['category'] ?? '')
+                    .toString()
+                    .toLowerCase(); //search bar WR4
+                final note = (goal['note'] ?? '').toString().toLowerCase();
+                return title.contains(_searchQuery) ||
+                    category.contains(_searchQuery) ||
+                    note.contains(_searchQuery); //search bar WR4
+              }).toList();
 
-          if (goals.isEmpty) {
-            return const Center(child: Text('No goals created yet.'));
-          }
+              if (goals.isEmpty) {
+                return const Center(child: Text('No goals created yet.'));
+              }
 
-          return ListView.builder(
-            itemCount: goals.length,
-            itemBuilder: (context, index) {
-              final goal = goals[index];
-              //final goalRef = goal.reference;
+              return ListView.builder(
+                itemCount: goals.length,
+                itemBuilder: (context, index) {
+                  final goal = goals[index];
+                  //final goalRef = goal.reference;
 
-              //calculate goal progress based on completed and toatl recurrences
-              int totalTaskCompletedRecurrences =
-                  goal['totalTaskCompletedRecurrences'] ?? 0;
-              int totalTaskRecurrences = goal['totalTaskRecurrences'] ?? 0;
-              double goalProgress = totalTaskRecurrences > 0
-                  ? totalTaskCompletedRecurrences / totalTaskRecurrences
-                  : 0;
-              //format start and end dates for display
-              String goalStartDate =
-                  _formatDate((goal['startDate'] as Timestamp).toDate());
-              String goalEndDate =
-                  _formatDate((goal['endDate'] as Timestamp).toDate());
+                  //calculate goal progress based on completed and toatl recurrences
+                  int totalTaskCompletedRecurrences =
+                      goal['totalTaskCompletedRecurrences'] ?? 0;
+                  int totalTaskRecurrences = goal['totalTaskRecurrences'] ?? 0;
+                  double goalProgress = totalTaskRecurrences > 0
+                      ? totalTaskCompletedRecurrences / totalTaskRecurrences
+                      : 0;
+                  //format start and end dates for display
+                  String goalStartDate =
+                      _formatDate((goal['startDate'] as Timestamp).toDate());
+                  String goalEndDate =
+                      _formatDate((goal['endDate'] as Timestamp).toDate());
 
-              return ListTile(
-                //goal with edit icon
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(goal['title']),
-                    IconButton(
-                      icon: const Icon(Icons.edit), // Edit icon
-                      onPressed: () => _editGoal(context, goal.reference,
-                          goal.data() as Map<String, dynamic>),
+                  return ListTile(
+                    //goal with edit icon
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(goal['title']),
+                        IconButton(
+                          icon: const Icon(Icons.edit), // Edit icon
+                          onPressed: () => _editGoal(context, goal.reference,
+                              goal.data() as Map<String, dynamic>),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                //showing goal details and progress bar
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        'Category: ${goal['category'] ?? 'No category'}\nNote: ${goal['note'] ?? 'No note'}\nDate: $goalStartDate to $goalEndDate'),
-                    LinearProgressIndicator(value: goalProgress),
-                    Text(
-                        '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
-                  ],
-                ),
-                //tap to naviagte to the Tasklist
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TaskListPage(goal: goal),
+                    //showing goal details and progress bar
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            'Category: ${goal['category'] ?? 'No category'}\nNote: ${goal['note'] ?? 'No note'}\nDate: $goalStartDate to $goalEndDate'),
+                        LinearProgressIndicator(value: goalProgress),
+                        Text(
+                            '${(goalProgress * 100).toStringAsFixed(0)}% of goal completed'),
+                      ],
                     ),
+                    //tap to naviagte to the Tasklist
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TaskListPage(goal: goal),
+                        ),
+                      );
+                    },
                   );
                 },
               );

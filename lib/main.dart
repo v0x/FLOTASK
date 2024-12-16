@@ -113,7 +113,7 @@ class _RootLayoutState extends State<RootLayout> {
           toggleTheme: widget.toggleTheme,
           isDarkMode: widget.isDarkMode,
         ),
-        TaskPage(),
+        DailyTaskPage(),
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'add_task.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'dailytask.dart';
-import 'package:flotask/models/event_provider.dart';
-import 'package:flotask/models/event_model.dart';
-import 'package:provider/provider.dart';
-import 'package:calendar_view/calendar_view.dart';
-import 'package:flotask/components/events_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:flotask/models/event_provider.dart';
+//import 'package:flotask/models/event_model.dart';
+//import 'package:provider/provider.dart';
+//import 'package:calendar_view/calendar_view.dart';
+//import 'package:flotask/components/events_dialog.dart';
 import 'package:intl/intl.dart';
 
 class AddGoalPage extends StatefulWidget {
@@ -26,7 +27,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _isRecurring = false;
+  //bool _isRecurring = false;
   final TextEditingController _descController =
       TextEditingController(); //controller for Description
 
@@ -62,50 +63,111 @@ class _AddGoalPageState extends State<AddGoalPage> {
 
   Future<void> _saveGoal() async {
     final goalTitle = _titleController.text;
-    final eventProvider = context.read<EventProvider>();
+    //get current user's UID
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You need to log in to save a goal.')),
+      );
+      return;
+    }
+    final String userId = currentUser.uid;
+    //final eventProvider = context.read<EventProvider>();
 
     if (goalTitle.isNotEmpty && _tasks.isNotEmpty) {
-      // Create the main goal event
-      final goalEvent = CalendarEventData(
-        title: goalTitle,
-        date: _startDate!,
-        endDate: _endDate!,
-        description: _noteController.text,
-      );
+      final goalRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('goals')
+          .doc(); //store new goal under user
+      int totalTaskRecurrences = 0; //store the sum of all task recurrences
+      await goalRef.set({
+        'title': goalTitle,
+        'category': _categoryController.text,
+        'note': _noteController.text,
+        'startDate':
+            _startDate != null ? Timestamp.fromDate(_startDate!) : null,
+        'endDate': _endDate != null ? Timestamp.fromDate(_endDate!) : null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'totalTaskCompletedRecurrences': 0,
+      });
 
-      // Add the goal as an event
-      await eventProvider.addEvent(
-        goalEvent,
-        note: _noteController.text,
-        tags: [_categoryController.text],
-        isRecurring: false,
-      );
-
-      // Add each task as a sub-event
       for (final taskData in _tasks) {
-        final taskEvent = CalendarEventData(
-          title: taskData['task'],
-          date: taskData['startDate'],
-          endDate: taskData['endDate'],
-          description: 'Task for goal: $goalTitle',
-          startTime: taskData['selectedTime'] != null
-              ? DateTime(
-                  taskData['startDate'].year,
-                  taskData['startDate'].month,
-                  taskData['startDate'].day,
-                  int.parse(taskData['selectedTime'].split(':')[0]),
-                  int.parse(taskData['selectedTime'].split(':')[1]),
-                )
-              : null,
-        );
+        if (taskData['startDate'] != null &&
+            taskData['endDate'] != null &&
+            taskData['repeatInterval'] != null) {
+          List<DateTime> recurrences = _generateRecurringDates(
+            taskData['startDate'],
+            taskData['endDate'],
+            taskData['repeatInterval'],
+          );
 
-        await eventProvider.addEvent(
-          taskEvent,
-          note: 'Part of goal: $goalTitle',
-          tags: [_categoryController.text],
-          isRecurring: taskData['repeatInterval'] > 0,
-        );
+          final taskRef = await goalRef.collection('tasks').add({
+            'task': taskData['task'],
+            'repeatInterval': taskData['repeatInterval'],
+            'startDate': Timestamp.fromDate(taskData['startDate']),
+            'endDate': Timestamp.fromDate(taskData['endDate']),
+            'selectedTime': taskData['selectedTime'],
+            'status': 'todo',
+            'totalRecurrences': recurrences.length,
+            'totalCompletedRecurrences': 0,
+          });
+          totalTaskRecurrences += recurrences.length;
+
+          for (DateTime date in recurrences) {
+            await taskRef.collection('recurrences').add({
+              'date': Timestamp.fromDate(date),
+              'status': 'todo',
+            });
+          }
+        }
       }
+      // Update the goal with the totalTaskRecurrences after all tasks are added
+      await goalRef.update({
+        'totalTaskRecurrences': totalTaskRecurrences,
+      });
+
+      // // Create the main goal event
+      // final goalEvent = CalendarEventData(
+      //   title: goalTitle,
+      //   date: _startDate!,
+      //   endDate: _endDate!,
+      //   description: _noteController.text,
+      // );
+
+      // // Add the goal as an event
+      // await eventProvider.addEvent(
+      //   goalEvent,
+      //   note: _noteController.text,
+      //   tags: [_categoryController.text],
+      //   isRecurring: false,
+      // );
+
+      // // Add each task as a sub-event
+      // for (final taskData in _tasks) {
+      //   final taskEvent = CalendarEventData(
+      //     title: taskData['task'],
+      //     date: taskData['startDate'],
+      //     endDate: taskData['endDate'],
+      //     description: 'Task for goal: $goalTitle',
+      //     startTime: taskData['selectedTime'] != null
+      //         ? DateTime(
+      //             taskData['startDate'].year,
+      //             taskData['startDate'].month,
+      //             taskData['startDate'].day,
+      //             int.parse(taskData['selectedTime'].split(':')[0]),
+      //             int.parse(taskData['selectedTime'].split(':')[1]),
+      //           )
+      //         : null,
+      //   );
+
+      //   await eventProvider.addEvent(
+      //     taskEvent,
+      //     note: 'Part of goal: $goalTitle',
+      //     tags: [_categoryController.text],
+      //     isRecurring: taskData['repeatInterval'] > 0,
+      //   );
+      // }
 
       // Clear data after saving
       _titleController.clear();
@@ -114,14 +176,17 @@ class _AddGoalPageState extends State<AddGoalPage> {
       _noteController.clear();
       setState(() {
         _isGoalComplete = false;
-        _startDate = null;
-        _endDate = null;
+        //_startDate = null;
+        //_endDate = null;
       });
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const TaskPage()),
-      );
+      // //navigate to the Daily task view
+      Navigator.of(context).pop();
+
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const DailyTaskPage()),
+      // );
     }
   }
 
@@ -135,29 +200,46 @@ class _AddGoalPageState extends State<AddGoalPage> {
       return;
     }
 
-    await showDialog(
-      context: context,
-      builder: (context) => EventDialog(
-        eventController: EventController(),
-        longPressDate: _startDate,
-        longPressEndDate: _endDate,
+    final newTask = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTaskPage(
+          goalStartDate: _startDate!,
+          goalEndDate: _endDate!,
+        ),
       ),
     );
 
-    final eventProvider = context.read<EventProvider>();
-    final latestEvent = eventProvider.events.last;
-
-    setState(() {
-      _tasks.add({
-        'task': latestEvent.event.title,
-        'startDate': latestEvent.event.date,
-        'endDate': latestEvent.event.endDate,
-        'repeatInterval': latestEvent.isRecurring ? 1 : 0,
-        'selectedTime': latestEvent.event.startTime != null
-            ? '${latestEvent.event.startTime!.hour}:${latestEvent.event.startTime!.minute}'
-            : null,
+    if (newTask != null) {
+      setState(() {
+        _tasks.add(newTask);
+        _checkIfGoalIsComplete();
       });
-    });
+    }
+
+    // await showDialog(
+    //   context: context,
+    //   builder: (context) => EventDialog(
+    //     eventController: EventController(),
+    //     longPressDate: _startDate,
+    //     longPressEndDate: _endDate,
+    //   ),
+    // );
+
+    //final eventProvider = context.read<EventProvider>();
+    //final latestEvent = eventProvider.events.last;
+
+    // setState(() {
+    //   _tasks.add({
+    //     'task': latestEvent.event.title,
+    //     'startDate': latestEvent.event.date,
+    //     'endDate': latestEvent.event.endDate,
+    //     'repeatInterval': latestEvent.isRecurring ? 1 : 0,
+    //     'selectedTime': latestEvent.event.startTime != null
+    //         ? '${latestEvent.event.startTime!.hour}:${latestEvent.event.startTime!.minute}'
+    //         : null,
+    //   });
+    // });
   }
 
   @override
@@ -309,17 +391,17 @@ class _AddGoalPageState extends State<AddGoalPage> {
                     ),
                     const SizedBox(height: 16.0),
 
-                    // Recurring Task Checkbox
-                    CheckboxListTile(
-                      title: const Text("Is this a recurring task?"),
-                      value: _isRecurring,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          _isRecurring = value ?? false;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16.0),
+                    // // Recurring Task Checkbox
+                    // CheckboxListTile(
+                    //   title: const Text("Is this a recurring task?"),
+                    //   value: _isRecurring,
+                    //   onChanged: (bool? value) {
+                    //     setState(() {
+                    //       _isRecurring = value ?? false;
+                    //     });
+                    //   },
+                    // ),
+                    // const SizedBox(height: 16.0),
 
                     // Tasks for this Goal
                     const Text(
