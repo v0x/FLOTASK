@@ -1,8 +1,8 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
+    //START: FlutterFire Configuration
+    id 'com.google.gms.google-services' //For Firebase configuration
+    //END: FlutterFire Configuration
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
@@ -27,16 +27,17 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.flotask"
-    compileSdk flutter.compileSdkVersion
+    compileSdk 34 //Update this to 34 or 35 if AGP is upgraded to 8.1.0+
+
     ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17' //Upgrade Kotlin to use JVM target 17
     }
 
     sourceSets {
@@ -44,21 +45,19 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.flotask"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 23
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34 //Match this with compileSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true //Enable MultiDex for compatibility with older devices
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.debug //Change to release signingConfig if available
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
@@ -68,6 +67,7 @@ flutter {
 }
 
 dependencies {
-    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.multidex:multidex:2.0.1' //For MultiDex support
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0" //Ensure Kotlin compatibility
 }
