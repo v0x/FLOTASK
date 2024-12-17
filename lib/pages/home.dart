@@ -24,14 +24,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScreenshotController _screenshotController = ScreenshotController();
-  SMIInput<double>? _growInput; // Input to control flower growth
+  SMIInput<double>? growinput; // Input to control flower growth
   int _currentStage = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateFlowerStage();
+      updateFlowerStage();
     });
   }
 
@@ -44,14 +44,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  void _onRiveInit(Artboard artboard) {
+  void _onRiveInit(Artboard artboard) async {
     final controller = StateMachineController.fromArtboard(artboard, 'State Machine 1');
     if (controller != null) {
       artboard.addController(controller);
-      _growInput = controller.findInput<double>('Grow');
-      if (_growInput != null) {
+      growinput = controller.findInput<double>('Grow');
+      if (growinput != null) {
         print('Grow input initialized.');
-        _updateFlowerStage(); // Update flower stage once initialized
+        print('The completed goals on init are: ${widget.completedGoals}');
+        for(double i=0; i<=widget.completedGoals;i++){
+          ufs(growinput, i);
+          print('Will wait for 1 seconds');
+          await Future.delayed(Duration(milliseconds:500));
+          print('1 seconds have passed');
+        }
       } else {
         print('Error: grow input not found');
       }
@@ -60,28 +66,41 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
+  void ufs(SMIInput<double>? growInput, double stage){
+    try{
+      if(growInput != null){
+        growInput.value = stage;
+        print('updated to stage $stage');
+      } else {
+        print('Error');
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
   // Update flower stage based on completed goals
-  void _updateFlowerStage() {
-    if (_growInput != null) {
+  void updateFlowerStage() {
+    if (growinput != null) {
       setState(() {
         switch (widget.completedGoals) {
           case 1:
-            _growInput!.value = 1; // Stage 1
+            growinput!.value = 1; // Stage 1
             _currentStage = 1;
             print('Flower at Stage 1');
             break;
-          case 2:
-            _growInput!.value = 2; // Stage 2
+          case 2:       
+            growinput!.value = 2; // Stage 2
             _currentStage = 2;
             print('Flower at Stage 2');
             break;
           case 3:
-            _growInput!.value = 3; // Stage 3
+            growinput!.value = 3; // Stage 3
             _currentStage = 3;
             print('Flower at Stage 3');
             break;
           default:
-            _growInput!.value = 0; // Initial stage
+            growinput!.value = 0; // Initial stage
             _currentStage = 0;
             print('Flower at Initial Stage');
         }
@@ -93,19 +112,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   // Retry mechanism to ensure growInput is initialized
   void _retryUpdateFlowerStage() {
-    if (_growInput == null) {
+    if (growinput == null) {
       print('Grow input not initialized, retrying...');
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (_growInput != null) {
-          _updateFlowerStage();
+        if (growinput != null) {
+          updateFlowerStage();
         } else {
           print('Grow input still not ready.');
         }
       });
     } else {
-      _updateFlowerStage();
+      updateFlowerStage();
     }
   }
+  
 
   @override
   Widget build(BuildContext context) {
