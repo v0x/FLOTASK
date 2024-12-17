@@ -52,4 +52,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/
     - assets/growing_plant.riv # Ensure this path is correct and the file exists

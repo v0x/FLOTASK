@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -10,6 +11,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  User? user = FirebaseAuth.instance.currentUser;
 
   FocusNode _usernameFocusNode = FocusNode();
   FocusNode _emailFocusNode = FocusNode();

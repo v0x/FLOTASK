@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flotask/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -19,7 +21,14 @@ class Menu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeArea = EdgeInsets.only(top: MediaQuery.of(context).viewPadding.top);
-
+    void logout() async {
+        try {
+          await FirebaseAuth.instance.signOut();
+          Navigator.of(context).pushReplacementNamed('/login');
+        } catch (e) {
+          print("Error logging out: $e");
+        }
+      }
     return Container(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
@@ -73,7 +82,10 @@ class Menu extends StatelessWidget {
                       context: context,
                       icon: Icons.exit_to_app,
                       title: 'Log Out',
-                      onTap: () => print('Log Out clicked'),
+                      onTap: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
+                      },
                     ),
                   ],
                 ),
