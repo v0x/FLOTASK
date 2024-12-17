@@ -2,22 +2,39 @@ import 'package:flotask/components/pomodoroTimer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../models/task_model.dart';
+import '../components/task_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../components/goal_service.dart';
+import '../models/goal_model.dart';
+import 'package:intl/intl.dart';
 
-  enum TaskLabel {
-    d('Select Task', Colors.white, 10, 5, 0),
-    sampleTask1('Task 1', Colors.blue, 1, 1, 1),
-    sampleTask2('Task 2', Colors.pink, 30, 5, 2),
-    sampleTask3('Task 3', Colors.green, 40, 7, 3),
-    sampleTask4('Task 4', Colors.orange, 60, 10, 4),
-    sampleTask5('Task 5', Colors.purple, 15, 2, 5);
+final GoalService goalService = GoalService();
+final TaskService taskService = TaskService();
+List<Task> tasks = [];
 
-    const TaskLabel(this.taskName, this.taskColor, this.workTime, this.breakTime, this.priority);
-    final String taskName;
-    final Color taskColor;
-    final int workTime;
-    final int breakTime;
-    final int priority;
+Color getColor(String colorString) {
+  try {
+    String hex = colorString.replaceAll("#", "");
+    if (hex.length == 6) {
+      hex = "FF$hex"; // Add alpha if missing
+    }
+    return Color(int.parse(hex, radix: 16));
+  } catch (e) {
+    return Colors.white; // Default color on error
   }
+}
+
+int timeDealer(int timeUnit) {
+  try {
+    return timeUnit; //Default to 25
+  } catch (e) {
+    return 5; 
+  }
+}
+
 
   class PomodoroPage extends StatefulWidget {
     const PomodoroPage({
@@ -28,10 +45,41 @@ import 'package:flutter/widgets.dart';
   }
 
   class _PomodoroState extends State<PomodoroPage> {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+  late final String userId;
+  late final CollectionReference goalsCollection;
 
+  @override
+  void initState() {
+    super.initState();
+    if (currentUser != null) {
+      userId = currentUser!.uid;
+      goalsCollection = FirebaseFirestore.instance.collection('users').doc(userId).collection('goals');
+    }
+    if(tasks.isEmpty){_fetchGoalsAndTasks();}
+  }
+  
     final TextEditingController taskController = TextEditingController();
-    TaskLabel? selectedTask;
+    Task? selectedTask;
     
+    Future<void> _fetchGoalsAndTasks() async {
+      try {
+        QuerySnapshot goalSnapshot = await goalsCollection.get();
+        List<Goal> fetchedGoals = goalSnapshot.docs.map((doc) => Goal.fromDocument(doc)).toList();
+        //tasks.add(Task(id: "9999", taskName: "Select Task", repeatInterval: 9999, startDate: DateTime.now(), endDate: DateTime.now(), workTime: 0, breakTime: 0, taskColor: "#FFFFFF", status: "status", totalRecurrences: 999, totalCompletedRecurrences: 999));
+        for (var goal in fetchedGoals) {
+          QuerySnapshot taskSnapshot = await goalsCollection.doc(goal.id).collection('tasks').get();
+          List<Task> fetchedTasks = taskSnapshot.docs.map((doc) => Task.fromDocument(doc)).toList();
+          for (var task in fetchedTasks) {
+            tasks.add(task);
+          }
+        }
+      } catch (e) {
+        print('Error fetching tasks: $e');
+      }
+    }
+
+
     @override
     Widget build(BuildContext context) {
       return Card(
@@ -44,51 +92,21 @@ import 'package:flutter/widgets.dart';
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: 
-                DropdownMenu<TaskLabel>(
-                  initialSelection: TaskLabel.d,
-                  controller: taskController,
-                  requestFocusOnTap: false,
-                  onSelected: (TaskLabel? task) {
+                DropdownButton<Task>(
+                  value: selectedTask,
+                  hint: Text('Select Task'),
+                  items: tasks.map((Task task) {
+                    return DropdownMenuItem<Task>(
+                      value: task,
+                      child: Text(task.taskName, style: TextStyle(color: Colors.black, fontWeight: FontWeight.normal)),
+                    );
+                  }).toList(),
+                  onChanged: (Task? newValue) {
                     setState(() {
-                      selectedTask = task;
+                      selectedTask = newValue;
                     });
                   },
-                  dropdownMenuEntries: TaskLabel.values
-                  .map<DropdownMenuEntry<TaskLabel>>(
-                  (TaskLabel task) {
-                    return DropdownMenuEntry<TaskLabel>(
-                      value: task,
-                      label: task.taskName,
-                      enabled: task.taskName != 'Select Task',
-                    );
-                    }).toList(),
-                    menuStyle: MenuStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.grey[300]),
-                    shape: MaterialStateProperty.all(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  inputDecorationTheme: 
-                  InputDecorationTheme(
-                    filled: true,
-                    fillColor: Colors.grey[300],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  textStyle: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    
-                  ),
-                  
                 ),
-
-                
               ),
               Column(
                 children: <Widget>[
@@ -124,29 +142,10 @@ import 'package:flutter/widgets.dart';
                               padding: EdgeInsets.all(4),
                               height: 60,
                               decoration: BoxDecoration(
-                              color: selectedTask!.taskColor.withOpacity(0.2),
+                              color: selectedTask!.taskColor.toColor()?.withOpacity(0.2),
                               ),
                               child: Row(
                                 children: [
-                                  //circle containing priority number
-                                  Container(
-                                    width: 30,
-                                    height: 30,
-                                    decoration: BoxDecoration(
-                                      color: selectedTask!.taskColor.withOpacity(0.4),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        selectedTask!.priority.toString(),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
                                   SizedBox(width: 10,),
                                   Text(
                                     selectedTask!.workTime.toString()+" min.",
@@ -165,7 +164,7 @@ import 'package:flutter/widgets.dart';
                                 padding: EdgeInsets.all(4),
                                 height: 60,
                                 decoration: BoxDecoration(
-                                color: selectedTask!.taskColor.withOpacity(0.3),
+                                color: selectedTask!.taskColor.toColor()?.withOpacity(0.3),
                                 ),
                                 child: 
                                 Center(
@@ -189,11 +188,10 @@ import 'package:flutter/widgets.dart';
                           ],),
                       ),
                       SizedBox(height: 16,),
-
                      PomodoroTimer(
-                      workTime: selectedTask!.workTime, 
-                      breakTime: selectedTask!.breakTime,
-                      taskColor: selectedTask!.taskColor,)
+                      workTime: timeDealer(selectedTask!.workTime), 
+                      breakTime: timeDealer(selectedTask!.breakTime),
+                      taskColor: getColor(selectedTask!.taskColor),)
                     ]
                   )
                   :

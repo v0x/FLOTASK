@@ -1,49 +1,78 @@
+import 'package:flotask/pages/add_goal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../models/task_model.dart';
+import '../components/task_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../components/goal_service.dart';
+import '../models/goal_model.dart';
+import 'package:intl/intl.dart';
 
-/*
-The DUM DUMSS (Dummy Tasks)
-*/
-class Task {
-  final String taskName;
-  final Color taskColor;
-  final int priority;
-  Task({required this.taskName, required this.taskColor, required this.priority});
-}
+final GoalService goalService = GoalService();
+final TaskService taskService = TaskService(); 
 
-List<Task> generateTasks(){
-  final List<Task> tasks = [];
-  tasks.add(Task(taskName: "Task 1", taskColor: Colors.blue, priority: 0));
-  tasks.add(Task(taskName: "Task 2", taskColor: Colors.pink, priority: 1));
-  tasks.add(Task(taskName: "Task 3", taskColor: Colors.green, priority: 2));
-  tasks.add(Task(taskName: "Task 4", taskColor: Colors.orange, priority: 3));
-  tasks.add(Task(taskName: "Task 5", taskColor: Colors.purple, priority: 4));
-  return tasks;
-}
+Map<String, List<Task>> folders = {}; //Maps Goal Titles to their Tasks
+String? openFolder; //Holds the currently open Goal Title
+List<Goal> goals = [];
+List<Task> tasks = []; //Tasks not assigned to any Goal
 
-//Category Page Code & Logic Stuff:
-List<Task> tasks = generateTasks(); 
-Map<String, List<Task>> folders = {};
-String? openFolder;
-
-class Category extends StatefulWidget{
+class Category extends StatefulWidget {
   @override
   _CategoryState createState() => _CategoryState();
 }
 
 class _CategoryState extends State<Category> {
-  //Folder Logic
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  late final String userId;
+  late final CollectionReference goalsCollection;
+
+  @override
+  void initState() {
+    super.initState();
+    if (currentUser != null) {
+      userId = currentUser!.uid;
+      goalsCollection = FirebaseFirestore.instance.collection('users').doc(userId).collection('goals');
+      if (folders.isEmpty && tasks.isEmpty){_fetchGoalsAndTasks();}
+    }
+  }
+
+  //Fetch all Goals and their associated Tasks
+  Future<void> _fetchGoalsAndTasks() async {
+    try {
+      QuerySnapshot goalSnapshot = await goalsCollection.get();
+      List<Goal> fetchedGoals = goalSnapshot.docs.map((doc) => Goal.fromDocument(doc)).toList();
+
+      //Initialize folders with Goal titles
+      for (var goal in fetchedGoals) {
+        QuerySnapshot taskSnapshot = await goalsCollection.doc(goal.id).collection('tasks').get();
+        List<Task> fetchedTasks = taskSnapshot.docs.map((doc) => Task.fromDocument(doc)).toList();
+        folders[goal.title] = fetchedTasks;
+      }
+      setState(() {
+        goals = fetchedGoals;
+      });
+    } catch (e) {
+      print('Error fetching goals and tasks: $e');
+    }
+  }
+
+  // Folder Logic
   void createFolder(String folderName){
     setState(() {
       folders[folderName] = [];
     });
   }
+
   void deleteFolder(String folderName) {
     setState(() {
-      /* Any tasks that are in the folder that's
-      going to be deleted will return to the original
-      tasks list so no tasks will be accidently deleted */
-      tasks.addAll(folders[folderName]!);
-      folders.remove(folderName);
+      if (folders.containsKey(folderName)) {
+         /* Any tasks that are in the folder that's
+        going to be deleted will return to the original
+        tasks list so no tasks will be accidently deleted */
+        tasks.addAll(folders[folderName]!);
+        folders.remove(folderName);
+      }
     });
   }
 
@@ -54,6 +83,7 @@ class _CategoryState extends State<Category> {
       folders[folderName]?.add(task);
     });
   }
+
   void removeTaskFromFolder(String folderName, Task task) {
     setState(() {
       folders[folderName]?.remove(task);
@@ -113,7 +143,7 @@ class _CategoryState extends State<Category> {
                           .map((task) => ListTile(
                             key: ValueKey(task.taskName),
                             title: Text(task.taskName),
-                            tileColor: task.taskColor.withOpacity(0.1),
+                            tileColor: task.taskColor.toColor()?.withOpacity(0.1),
                             onTap: () {
                               _MoveTaskAction(task);
                             },
@@ -209,7 +239,7 @@ class _CategoryState extends State<Category> {
             .map((task) => ListTile(
               key: ValueKey(task.taskName),
               title: Text(task.taskName),
-              tileColor: task.taskColor.withOpacity(0.1),
+              tileColor: task.taskColor.toColor()?.withOpacity(0.1),
             onTap: () {
               removeTaskFromFolder(folderName, task);
             },

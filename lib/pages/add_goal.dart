@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'add_task.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart'; //Import Firestore
 import 'dailytask.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart'; //Import Color Picker
+import 'package:flutter/services.dart'; //For input formatters
 //import 'package:flotask/models/event_provider.dart';
 //import 'package:flotask/models/event_model.dart';
 //import 'package:provider/provider.dart';
@@ -31,9 +33,17 @@ class _AddGoalPageState extends State<AddGoalPage> {
   final TextEditingController _descController =
       TextEditingController(); //controller for Description
 
+  // Controllers and Variables for New Fields
+  final TextEditingController _workTimeController =
+      TextEditingController(); // Controller for work time
+  final TextEditingController _breakTimeController =
+      TextEditingController(); // Controller for break time
+  Color _selectedColor = Colors.blue; // Default color
+
   void _checkIfGoalIsComplete() {
     setState(() {
-      _isGoalComplete = _titleController.text.isNotEmpty && _tasks.isNotEmpty;
+      _isGoalComplete =
+          _titleController.text.isNotEmpty && _tasks.isNotEmpty;
     });
   }
 
@@ -111,6 +121,9 @@ class _AddGoalPageState extends State<AddGoalPage> {
             'status': 'todo',
             'totalRecurrences': recurrences.length,
             'totalCompletedRecurrences': 0,
+            'workTime': taskData['workTime'], // Save Work Time
+            'breakTime': taskData['breakTime'], // Save Break Time
+            'color': taskData['color'], // Save Color as Hex String
           });
           totalTaskRecurrences += recurrences.length;
 
@@ -174,6 +187,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
       _tasks.clear();
       _categoryController.clear();
       _noteController.clear();
+      _workTimeController.clear(); // Clear Work Time
+      _breakTimeController.clear(); // Clear Break Time
       setState(() {
         _isGoalComplete = false;
         //_startDate = null;
@@ -247,6 +262,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
     _titleController.dispose();
     _categoryController.dispose();
     _noteController.dispose();
+    _workTimeController.dispose(); // Dispose Work Time Controller
+    _breakTimeController.dispose(); // Dispose Break Time Controller
     super.dispose();
   }
 
@@ -279,7 +296,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Card(
             elevation: 2,
             child: SingleChildScrollView(
@@ -431,16 +449,40 @@ class _AddGoalPageState extends State<AddGoalPage> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8.0),
                           child: ListTile(
+                            leading: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Color(int.parse(
+                                    _tasks[index]['color'], radix: 16)),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black),
+                              ),
+                            ), // Display selected color
                             title: Text(
                               _tasks[index]['task'],
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            subtitle: Text(
-                              'Repeat Every: ${_tasks[index]['repeatInterval']} days\n'
-                              'Date: ${DateFormat('MMM dd, yyyy').format(_tasks[index]['startDate'])} - '
-                              '${DateFormat('MMM dd, yyyy').format(_tasks[index]['endDate'])}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Repeat Every: ${_tasks[index]['repeatInterval']} days',
+                                ),
+                                Text(
+                                  'Date: ${DateFormat('MMM dd, yyyy').format(_tasks[index]['startDate'])} - '
+                                  '${DateFormat('MMM dd, yyyy').format(_tasks[index]['endDate'])}',
+                                ),
+                                if (_tasks[index]['selectedTime'] != null)
+                                  Text(
+                                      'Time: ${_tasks[index]['selectedTime']}'), // Display selected time
+                                Text(
+                                    'Work Time: ${_tasks[index]['workTime']} minutes'), // Display Work Time
+                                Text(
+                                    'Break Time: ${_tasks[index]['breakTime']} minutes'), // Display Break Time
+                              ],
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
