@@ -178,7 +178,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                         <String>['Any time', 'Specific time'].map((String value) {
                       return DropdownMenuItem<String>(
                         value: value, // Value for each option
-                        child: Text(value), // Display text for each option
+                        child: Text(value, style: TextStyle(color: Colors.black),), // Display text for each option
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
