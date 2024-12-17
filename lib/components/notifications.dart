@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /*Notification Type Selected: Local
  *Why?: It can run in background even if the app itself is closed
@@ -30,109 +31,171 @@ class Task {
 }
 
 List<Task> tasks = [
-  Task(id: 0, taskName: "Task 1", daily: true, completed: true, setReminderHour: 21, setReminderMinute: 0),
-  Task(id: 1, taskName: "Task 2", daily: false, completed: false,setReminderHour: 16, setReminderMinute: 55),
-  Task(id: 2, taskName: "Task 3", daily: false, completed: true, setReminderHour: 16, setReminderMinute: 54),
-  Task(id: 3, taskName: "Task 4", daily: true, completed: false, setReminderHour: 16, setReminderMinute: 56),
+  Task(id: 0, taskName: "Task 1", daily: true, completed: false, setReminderHour: 17, setReminderMinute: 30),
+  Task(id: 1, taskName: "Task 2", daily: false, completed: false,setReminderHour: 17, setReminderMinute: 31),
+  Task(id: 2, taskName: "Task 3", daily: false, completed: false, setReminderHour: 17, setReminderMinute: 32),
+  Task(id: 3, taskName: "Task 4", daily: true, completed: false, setReminderHour: 17, setReminderMinute: 33),
 ];
 
-class Notifications{
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+class Notifications {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-/*
-  void requestPerms(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) {
-    flutterLocalNotificationsPlugin
-    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-    ?.requestPermission();
+  Future<void> requestPerms() async {
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
   }
-  */ 
-  Future<void> initState() async{
+
+  Future<void> initState() async {
     WidgetsFlutterBinding.ensureInitialized();
-    //Timezone Related
+
+    // Timezone setup
     tz.initializeTimeZones();
-    //Grabbing timezone info from the device
     String deviceTZ = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(deviceTZ));
-    //Notifications Related
-    //ic_launcher is used by android to display app icon in notifications
-    const AndroidInitializationSettings androidInitializationSettings 
-      = AndroidInitializationSettings('@mipmap/ic_launcher');
-    final InitializationSettings initializationSettings 
-      = InitializationSettings(android: androidInitializationSettings);
+
+    // Notifications initialization
+    const AndroidInitializationSettings androidInitializationSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: androidInitializationSettings);
+
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-    //requestPerms(flutterLocalNotificationsPlugin);
+
+    // Create the notification channel
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'task_channel_id',
+            'Tasks',
+            description: 'Channel for task notifications',
+            importance: Importance.max,
+          ),
+        );
+    print("Notification channel created.");
+
+    await requestPerms();
     scheduleNotifsForTasks(tasks, flutterLocalNotificationsPlugin);
+
+    // Test immediate and scheduled notifications
+    //testImmediateNotification();
+    testScheduledNotification();
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hourSpecified, int minuteSpecified) {
     final tz.TZDateTime currentTime = tz.TZDateTime.now(tz.local);
+    print("Current time: $currentTime");
+
     tz.TZDateTime scheduledTime = tz.TZDateTime(
       tz.local,
       currentTime.year,
       currentTime.month,
       currentTime.day,
       hourSpecified,
-      minuteSpecified
+      minuteSpecified,
     );
 
-    //Pretty much once the scheduled time for the current day has passed, we schedule for the next day.
-    if(scheduledTime.isBefore(currentTime)) {
+    if (scheduledTime.isBefore(currentTime)) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
+    print("Scheduled time: $scheduledTime");
     return scheduledTime;
   }
 
-  //iterating through all the tasks to setup notifications for them
-  void scheduleNotifsForTasks(List<Task> tasks, FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) {
+  void scheduleNotifsForTasks(
+      List<Task> tasks, FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) {
     for (var task in tasks) {
-      setupNotif(task, flutterLocalNotificationsPlugin);
+      if (!task.completed) {
+        print("Scheduling notification for Task: ${task.taskName}");
+        setupNotif(task, flutterLocalNotificationsPlugin);
+      } else {
+        print("Skipping completed Task: ${task.taskName}");
+      }
     }
   }
 
-  Future<void> setupNotif(Task task, FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
-    tz.TZDateTime scheduledDate = _nextInstanceOfTime(task.setReminderHour, task.setReminderMinute);
-    tz.TZDateTime lastMinute = _nextInstanceOfTime(23, 0);
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      task.id, //Notif ID: Using enum index for the notification ID.
-      task.taskName, //Title
-      "You haven't watered your plants today! Let's help them grow!", //Notifcation Description
-      scheduledDate, //Date
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'task_channel_id', //ChannelID
-          'Tasks', //Channel
-          channelDescription: 'Channel for task notifications', //Channel Description
-          importance: Importance.max,
-          priority: Priority.high,
+  Future<void> setupNotif(
+      Task task, FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
+    tz.TZDateTime scheduledDate =
+        _nextInstanceOfTime(task.setReminderHour, task.setReminderMinute);
+
+    print("Scheduling '${task.taskName}' Notification for Time: $scheduledDate");
+
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        task.id,
+        task.taskName,
+        "You haven't completed this task yet!",
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'task_channel_id',
+            'Tasks',
+            channelDescription: 'Channel for task notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
         ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: task.daily ? DateTimeComponents.time : null, 
-      //If the daily value is true, repeat notification everday, if not, don't.
-    );
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      task.id+1000, //Notif ID: Using enum index for the notification ID.
-      task.taskName, //Title
-      "Time's almost up for today! Let's water the plants before time runs out!", //Notifcation Description
-      lastMinute, //Date
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'task_channel_id', //ChannelID
-          'Tasks', //Channel
-          channelDescription: 'Channel for task notifications', //Channel Description
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: task.daily ? DateTimeComponents.time : null, 
-      //If the daily value is true, repeat notification everday, if not, don't.
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: task.daily ? DateTimeComponents.time : null,
+      );
+      print("Notification successfully scheduled for task: ${task.taskName}");
+    } catch (e) {
+      print("Error scheduling notification for task '${task.taskName}': $e");
+    }
   }
 
+  void testImmediateNotification() async {
+    try {
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        "Test Notification",
+        "This is a test notification",
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'task_channel_id',
+            'Tasks',
+            channelDescription: 'Channel for task notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+      print("Test notification triggered.");
+    } catch (e) {
+      print("Error showing test notification: $e");
+    }
+  }
+
+  void testScheduledNotification() async {
+    final tz.TZDateTime scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
+    print("Testing scheduled notification for $scheduledTime");
+
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        999, // Unique ID for the test notification
+        "Test Scheduled Notification",
+        "This is a test for scheduled notifications",
+        scheduledTime,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'task_channel_id',
+            'Tasks',
+            channelDescription: 'Channel for task notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      print("Scheduled notification successfully.");
+    } catch (e) {
+      print("Error scheduling test notification: $e");
+    }
+  }
 }
