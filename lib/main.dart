@@ -1,4 +1,3 @@
-// FLUTTER CORE PACKAGES
 import 'package:flotask/models/event_model.dart';
 import 'package:flotask/models/event_provider.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +36,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(MainApp());
 }
 
@@ -97,8 +95,11 @@ class RootLayout extends StatefulWidget {
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
-  const RootLayout(
-      {super.key, required this.toggleTheme, required this.isDarkMode});
+  const RootLayout({
+    super.key,
+    required this.toggleTheme,
+    required this.isDarkMode,
+  });
 
   @override
   _RootLayoutState createState() => _RootLayoutState();
@@ -106,6 +107,19 @@ class RootLayout extends StatefulWidget {
 
 class _RootLayoutState extends State<RootLayout> {
   int currentPageIndex = 0;
+  int completedGoals = 0; // Track completed goals count
+
+  // Function to update completed goals count safely after the build phase
+  void _updateCompletedGoals(int count) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && completedGoals != count) {
+        setState(() {
+          completedGoals = count;
+        });
+        print('Updated completed goals: $completedGoals');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,11 +128,12 @@ class _RootLayoutState extends State<RootLayout> {
         HomePage(
           toggleTheme: widget.toggleTheme,
           isDarkMode: widget.isDarkMode,
+          completedGoals: completedGoals, // Pass completed goals to HomePage
         ),
         DailyTaskPage(),
         CalendarPage(),
         PomodoroPage(),
-        ProgressPage(),
+        ProgressPage(onGoalCompletion: _updateCompletedGoals), // Pass callback
         Category(),
         AchievementPage(),
         MapPage(),
