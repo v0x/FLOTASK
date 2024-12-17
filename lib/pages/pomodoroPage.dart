@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-//dummy tasks for navbar
   enum TaskLabel {
     d('Select Task', Colors.white, 10, 5, 0),
     sampleTask1('Task 1', Colors.blue, 1, 1, 1),
@@ -20,7 +19,6 @@ import 'package:flutter/widgets.dart';
     final int priority;
   }
 
-  //this page will have multiple states
   class PomodoroPage extends StatefulWidget {
     const PomodoroPage({
       super.key,
@@ -30,7 +28,7 @@ import 'package:flutter/widgets.dart';
   }
 
   class _PomodoroState extends State<PomodoroPage> {
-    //variables for navbar selection
+
     final TextEditingController taskController = TextEditingController();
     TaskLabel? selectedTask;
     
@@ -40,9 +38,9 @@ import 'package:flutter/widgets.dart';
         shadowColor: Colors.transparent,
         margin: const EdgeInsets.all(8.0),
         child: SizedBox.expand(
+        child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
-              //navbar
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: 
@@ -57,7 +55,6 @@ import 'package:flutter/widgets.dart';
                   },
                   dropdownMenuEntries: TaskLabel.values
                   .map<DropdownMenuEntry<TaskLabel>>(
-                  //list of tasks in the navbar
                   (TaskLabel task) {
                     return DropdownMenuEntry<TaskLabel>(
                       value: task,
@@ -192,7 +189,7 @@ import 'package:flutter/widgets.dart';
                           ],),
                       ),
                       SizedBox(height: 16,),
-                     //passing parameters of selectedTask into PomodoroTimer component
+
                      PomodoroTimer(
                       workTime: selectedTask!.workTime, 
                       breakTime: selectedTask!.breakTime,
@@ -200,7 +197,6 @@ import 'package:flutter/widgets.dart';
                     ]
                   )
                   :
-                  //default
                   Text(
                     'No Task Currently Selected',
                     style: TextStyle(
@@ -212,6 +208,7 @@ import 'package:flutter/widgets.dart';
               ]
           ),
         ),
+      )
       );
     }
   }

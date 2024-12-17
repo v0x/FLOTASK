@@ -17,11 +17,15 @@ import 'package:flotask/pages/login.dart';
 import 'package:flotask/pages/signup.dart';
 import 'package:flotask/pages/home.dart';
 import 'package:flotask/pages/calendar.dart';
+import 'package:flotask/pages/category.dart';
 import 'package:flotask/pages/pomodoroPage.dart';
-import 'package:flotask/pages/task.dart';
+import 'package:flotask/pages/dailytask.dart';
 import 'package:flotask/pages/progress.dart';
-import 'package:flotask/pages/profile/userprofile.dart'; // Import UserProfilePage
 import 'package:flotask/pages/achievements.dart';
+import 'package:flotask/pages/map.dart';
+
+// TEST voice memos
+import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +35,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MainApp()); // Launches the app with MainApp as the root widget
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MainApp());
 }
 
 class MainApp extends StatefulWidget {
@@ -59,73 +64,62 @@ class _MainAppState extends State<MainApp> {
         ChangeNotifierProvider(create: (context) => AchievementProvider()),
       ],
       child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData.light().copyWith(
-            textTheme: TextTheme(
-              bodyLarge: TextStyle(
-                  color: Color(0xFF8D6E63)), // Set color for normal text
-              bodyMedium: TextStyle(
-                  color: Color(0xFF8D6E63)), // Set color for smaller text
-              displayLarge: TextStyle(
-                  color: Color(0xFF8D6E63)), // Set color for large headings
-              // Customize other text styles as needed
-            ),
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.light().copyWith(
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Color(0xFF8D6E63)),
+            bodyMedium: TextStyle(color: Color(0xFF8D6E63)),
+            displayLarge: TextStyle(color: Color(0xFF8D6E63)),
           ),
-          darkTheme: ThemeData.dark().copyWith(
-            textTheme: TextTheme(
-              bodyLarge:
-                  TextStyle(color: Colors.white70), // Set color for normal text
-              bodyMedium: TextStyle(
-                  color: Colors.white70), // Set color for smaller text
-              displayLarge: TextStyle(
-                  color: Colors.white), // Set color for large headings
-              // Customize other text styles as needed
-            ),
+        ),
+        darkTheme: ThemeData.dark().copyWith(
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Colors.white70),
+            bodyMedium: TextStyle(color: Colors.white70),
+            displayLarge: TextStyle(color: Colors.white),
           ),
-          themeMode: _isDarkMode
-              ? ThemeMode.dark
-              : ThemeMode.light, // Conditionally apply the theme
-          //home: BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
-
-          //set the initial page to LoginPage
-          home: LoginPage(),
-          routes: {
-            '/home': (context) =>
-                BottomNav(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
-            '/signup': (context) => SignupPage(), //signup page
-          }),
+        ),
+        themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        home: LoginPage(),
+        routes: {
+          '/home': (context) =>
+              RootLayout(toggleTheme: _toggleTheme, isDarkMode: _isDarkMode),
+          '/signup': (context) => SignupPage(),
+        },
+      ),
     );
   }
 }
 
-// BottomNav is a stateful widget managing the bottom navigation bar.
-class BottomNav extends StatefulWidget {
+class RootLayout extends StatefulWidget {
   final VoidCallback toggleTheme; // Function to toggle theme
   final bool isDarkMode; // Pass the theme state
 
-  const BottomNav(
+  const RootLayout(
       {super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
-  _BottomNavState createState() => _BottomNavState();
+  _RootLayoutState createState() => _RootLayoutState();
 }
 
-class _BottomNavState extends State<BottomNav> {
-  int currentPageIndex = 0; // Keeps track of the current tab index
+class _RootLayoutState extends State<RootLayout> {
+  int currentPageIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: [
         HomePage(
-            toggleTheme: widget.toggleTheme,
-            isDarkMode: widget.isDarkMode), // Home page with theme toggle
-        TaskPage(),
+          toggleTheme: widget.toggleTheme,
+          isDarkMode: widget.isDarkMode,
+        ),
+        DailyTaskPage(),
         CalendarPage(),
         PomodoroPage(),
         ProgressPage(),
-        UserProfilePage(),
+        Category(),
         AchievementPage(),
+        MapPage(),
       ][currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentPageIndex,
@@ -137,16 +131,38 @@ class _BottomNavState extends State<BottomNav> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.task, size: 30), label: ''),
           BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.alarm, size: 30), label: ''),
+            icon: Icon(Icons.home, size: 30),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.checklist_rtl_rounded, size: 30), label: ''),
+            icon: Icon(Icons.task, size: 30),
+            label: 'Task',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 30), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events, size: 30), label: ''),
+            icon: Icon(Icons.calendar_today, size: 30),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alarm, size: 30),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded, size: 30),
+            label: 'Progress',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.folder, size: 30),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.emoji_events, size: 30),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.location_pin, size: 30),
+            label: '',
+          ),
         ],
       ),
     );
