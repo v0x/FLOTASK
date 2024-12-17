@@ -239,7 +239,7 @@ class _DailyTaskPageState extends State<DailyTaskPage>
                               value: option['label'],
                               child: Text(
                                 option['label'],
-                                style: TextStyle(color: option['color']),
+                                style: const TextStyle(color: Colors.black),
                               ),
                             );
                           }).toList(),
@@ -311,7 +311,7 @@ class _DailyTaskPageState extends State<DailyTaskPage>
                       .map((String priority) {
                     return DropdownMenuItem<String>(
                       value: priority,
-                      child: Text(priority),
+                      child: Text(priority, style: const TextStyle(color: Colors.black)),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
