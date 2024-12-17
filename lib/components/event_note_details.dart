@@ -93,6 +93,7 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
+                          // show the event times
                           Icon(Icons.access_time, color: Colors.blue[700]),
                           const SizedBox(width: 8),
                           Text(
@@ -104,6 +105,7 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
+                          // show the event dates
                           Icon(Icons.calendar_today, color: Colors.green[700]),
                           const SizedBox(width: 8),
                           Text(
@@ -115,6 +117,7 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                       if (event.isRecurring) ...[
                         const SizedBox(height: 8),
                         Row(
+                          // show the recurring logo
                           children: [
                             Icon(Icons.repeat, color: Colors.orange[700]),
                             const SizedBox(width: 8),
@@ -170,6 +173,8 @@ class _EventDetailWithNotesState extends State<EventDetailWithNotes> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+
+                          // logic to save note and update to firebase
                           ElevatedButton.icon(
                             onPressed: () {
                               final eventProvider =

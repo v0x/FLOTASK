@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:calendar_view/calendar_view.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flotask/pages/events.dart';
 
 // the calendar widget to show the MOnth view, Week View, and day view. There are also onTap, onEventTap, and on DateTap functions to route to different pages
 class CalendarPage extends StatefulWidget {
@@ -40,12 +41,17 @@ class _CalendarPageState extends State<CalendarPage>
     final eventProvider = context.read<EventProvider>();
     await eventProvider.loadEventsFromFirebase();
 
-    // After loading events from Firebase, add them to the EventController
-    // _eventController.removeWhere((_) => true); // Clear existing events
     for (var event in eventProvider.events) {
       _eventController.add(event.event);
     }
     setState(() {}); // Trigger a rebuild to reflect the changes
+  }
+
+  // check if 2 dates are same for event list view on a specific day
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   @override
@@ -56,6 +62,19 @@ class _CalendarPageState extends State<CalendarPage>
     return Scaffold(
         appBar: AppBar(
           title: Text("Calendar View"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.event),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TaskPage(),
+                  ),
+                );
+              },
+            ),
+          ],
           bottom: TabBar(
             controller: tabController,
             tabs: [Text("Month View"), Text("Week View"), Text("Day View")],
@@ -71,6 +90,7 @@ class _CalendarPageState extends State<CalendarPage>
             onCellTap: (events, date) {
               String formattedDate = DateFormat('MMMM d, y').format(date);
 
+// event list view
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -80,17 +100,24 @@ class _CalendarPageState extends State<CalendarPage>
                         leading: IconButton(
                           icon: Icon(Icons.arrow_back),
                           onPressed: () {
-                            Navigator.pop(
-                                context); // Pops the current page and goes back
+                            Navigator.pop(context);
                           },
                         ),
                       ),
 
                       // route to a detailed list view of each task
                       body: ListView.builder(
-                        itemCount: eventProvider.events.length,
+                        itemCount: eventProvider.events
+                            .where((event) => isSameDay(event.event.date, date))
+                            .length,
                         itemBuilder: (context, index) {
-                          final event = eventProvider.events[index];
+                          // Get filtered events list
+                          final filteredEvents = eventProvider.events
+                              .where(
+                                  (event) => isSameDay(event.event.date, date))
+                              .toList();
+                          final event = filteredEvents[index];
+
                           return ListTile(
                             title: Text(event.event.title),
                             subtitle: Text(
@@ -188,18 +215,6 @@ class _CalendarPageState extends State<CalendarPage>
           ),
         ]),
 
-        // action button to show a dialog to input a calendar event
-        // floatingActionButton: FloatingActionButton(
-        //   child: const Icon(Icons.add),
-        //   onPressed: () {
-        //     showDialog(
-        //         context: context,
-        //         builder: (BuildContext context) => EventDialog(
-        //               eventController: _eventController,
-        //             ));
-        //   },
-        // ),
-
         //floating action button to add a new goal
         floatingActionButton: Padding(
           padding: const EdgeInsets.all(10.0),
@@ -222,6 +237,8 @@ class _CalendarPageState extends State<CalendarPage>
             ),
           ),
         ),
+
+        // side drawer to show notes
         drawer: Drawer(
           child: SafeArea(
             child: Column(

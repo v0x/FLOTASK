@@ -3,8 +3,9 @@ import 'package:calendar_view/calendar_view.dart';
 import 'event_model.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// the global state for handling all events within our app
+// the global state for handling all firebase events within our app
 class EventProvider extends ChangeNotifier {
   // List of events
   List<EventModel> _events = [];
@@ -15,10 +16,22 @@ class EventProvider extends ChangeNotifier {
   // Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Firebase Auth instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Get current user ID
+  String? get currentUserId => _auth.currentUser?.uid;
+
+  // Get reference to user's events collection
+  CollectionReference get userEventsRef =>
+      _firestore.collection('users').doc(currentUserId).collection('events');
+
   // Load events from Firebase
   Future<void> loadEventsFromFirebase() async {
     try {
-      QuerySnapshot snapshot = await _firestore.collection('events').get();
+      if (currentUserId == null) return;
+
+      QuerySnapshot snapshot = await userEventsRef.get();
 
       _events = snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -59,12 +72,14 @@ class EventProvider extends ChangeNotifier {
     }
   }
 
-  // Method to add a new event
+  // Method to add a new event with calendar data from calendar view, note, tags, voice memos, reucurring tasks
   Future<void> addEvent(CalendarEventData eventData,
       {String? note,
       List<String>? tags,
       bool? isRecurring,
       String? voiceMemos}) async {
+    if (currentUserId == null) return;
+
     final newEvent = EventModel(
       event: eventData,
       note: note,
@@ -74,7 +89,7 @@ class EventProvider extends ChangeNotifier {
     );
 
 // Save the event to Firestore
-    DocumentReference docRef = await _firestore.collection('events').add({
+    DocumentReference docRef = await userEventsRef.add({
       // 'id': newEvent.event.hashCode,
       'title': newEvent.event.title,
       'description': newEvent.event.description,
@@ -117,8 +132,9 @@ class EventProvider extends ChangeNotifier {
   // method to update note
   Future<void> updateNote(String eventId, String note) async {
     try {
-      final docRef = _firestore.collection('events').doc(eventId);
-      await docRef.update({'note': note});
+      if (currentUserId == null) return;
+
+      await userEventsRef.doc(eventId).update({'note': note});
 
       final index = _events.indexWhere((e) => e.id == eventId);
       if (index != -1) {
@@ -134,11 +150,10 @@ class EventProvider extends ChangeNotifier {
   // method to update a streak if the task is completed within a day, then streak of a month and year
   Future<void> updateStreak(String eventId) async {
     final today = DateTime.now();
-
     final index = _events.indexWhere((element) => element.id == eventId);
-
     final event = _events[index];
 
+    // if the task has been completed before, check if the difference in days is 1 day
     if (event.lastCompletedDate != null) {
       final differenceInDays =
           today.difference(event.lastCompletedDate!).inDays;
@@ -162,67 +177,37 @@ class EventProvider extends ChangeNotifier {
 
     event.lastCompletedDate = today;
 
-    await FirebaseFirestore.instance.collection('events').doc(event.id).update({
+    await userEventsRef.doc(event.id).update({
       'dayStreak': event.dayStreak,
       'monthStreak': event.monthStreak,
-      'yearStreak': event.yearStreak
+      'yearStreak': event.yearStreak,
+      'lastCompletedDate': event.lastCompletedDate?.toIso8601String()
     });
 
     notifyListeners();
   }
 
-// function to find days in month
-  // int daysInMonth(DateTime date) {
-  //   var beginningNextMonth = (date.month < 12)
-  //       ? DateTime(date.year, date.month + 1, 1)
-  //       : DateTime(date.year + 1, 1, 1);
-  //   return beginningNextMonth.subtract(Duration(days: 1)).day;
-  // }
-
-  // method to archive note
-  // Future<void> archiveNote(String eventId) async {
-  //   final index = _events.indexWhere((element) => element.id == eventId);
-
-  //   if (_events[index].isArchived == false) {
-  //     _events[index].isArchived = true;
-  //   }
-
-  //   await FirebaseFirestore.instance
-  //       .collection('events')
-  //       .doc(_events[index].id)
-  //       .update({'isCompleted': _events[index].isArchived});
-  //   notifyListeners();
-  // }
-
-  // // method to unarchive note
-  // Future<void> unarchiveNote(String eventId) async {
-  //   final index = _events.indexWhere((element) => element.id == eventId);
-
-  //   if (_events[index].isArchived == true) {
-  //     _events[index].isArchived = false;
-  //   }
-  //   notifyListeners();
-
-  //   await FirebaseFirestore.instance
-  //       .collection('events')
-  //       .doc(_events[index].id)
-  //       .update({'isCompleted': _events[index].isArchived});
-  // }
-
+  // method to update archived status
   Future<void> updateArchivedStatus(String eventId, bool isArchived) async {
+    if (currentUserId == null) return;
+
     final index = _events.indexWhere((element) => element.id == eventId);
 
     if (index != -1) {
       _events[index].isArchived = !isArchived;
 
-      // Update archived status in Firebase
-      if (_events[index].id != null) {
-        await FirebaseFirestore.instance
-            .collection('events')
-            .doc(_events[index].id)
+      // Update archived status in Firebase using userEventsRef
+      try {
+        await userEventsRef
+            .doc(eventId)
             .update({'isArchived': _events[index].isArchived});
-      } else {
-        print('Error: Firebase ID is null for event ${_events[index].id}');
+        notifyListeners();
+      } catch (e) {
+        print('Error updating archived status: $e');
+        // Revert the local change if the Firebase update fails
+        _events[index].isArchived = isArchived;
+        notifyListeners();
+        throw e;
       }
     } else {
       print('Error: Event not found with id $eventId');
@@ -232,6 +217,8 @@ class EventProvider extends ChangeNotifier {
   }
 
   Future<void> toggleComplete(String eventId, bool value) async {
+    if (currentUserId == null) return;
+
     final index = _events.indexWhere((element) => element.id == eventId);
     final event = _events[index];
 
@@ -248,20 +235,10 @@ class EventProvider extends ChangeNotifier {
         final differenceInDays =
             today.difference(event.lastCompletedDate!).inDays;
 
-        // Check if we need to roll back the streak (only if the task was completed today)
+        // if the task was completed today, reduce the day streak
         if (differenceInDays == 0) {
           // Reduce day streak
           event.dayStreak = event.dayStreak > 0 ? event.dayStreak - 1 : 0;
-
-          // If day streak reaches below days in month, adjust the month streak
-          // if (event.dayStreak < 30 && event.monthStreak > 0) {
-          //   event.monthStreak--;
-
-          //   // If month streak is undone, adjust the year streak if necessary
-          //   if (event.monthStreak < 12 && event.yearStreak > 0) {
-          //     event.yearStreak--;
-          //   }
-          // }
 
           // Set last completed date to null to indicate it's undone
           event.lastCompletedDate = null;
@@ -269,11 +246,13 @@ class EventProvider extends ChangeNotifier {
       }
     }
 
-    await FirebaseFirestore.instance.collection('events').doc(event.id).update({
+    // Update in Firestore using userEventsRef instead of direct collection reference
+    await userEventsRef.doc(event.id).update({
       'isCompleted': event.isCompleted,
       'dayStreak': event.dayStreak,
       'monthStreak': event.monthStreak,
-      'yearStreak': event.yearStreak
+      'yearStreak': event.yearStreak,
+      'lastCompletedDate': event.lastCompletedDate?.toIso8601String()
     });
 
     notifyListeners();
@@ -285,10 +264,7 @@ class EventProvider extends ChangeNotifier {
 
     event.voiceMemos = text;
 
-    await FirebaseFirestore.instance
-        .collection('events')
-        .doc(eventId)
-        .update({'voiceMemos': text});
+    await userEventsRef.doc(event.id).update({'voiceMemos': text});
 
     notifyListeners();
   }
@@ -303,7 +279,7 @@ class EventProvider extends ChangeNotifier {
     String? voiceMemos,
   }) async {
     try {
-      final docRef = _firestore.collection('events').doc(eventId);
+      final docRef = userEventsRef.doc(eventId);
 
       Map<String, dynamic> updates = {};
       if (title != null) updates['title'] = title;
@@ -315,7 +291,6 @@ class EventProvider extends ChangeNotifier {
 
       await docRef.update(updates);
 
-      // Update local state
       final index = _events.indexWhere((e) => e.id == eventId);
       if (index != -1) {
         final event = _events[index];

@@ -25,6 +25,8 @@ import 'package:flotask/pages/achievements.dart';
 import 'package:flotask/pages/map.dart';
 
 // TEST voice memos
+import 'package:flotask/pages/events.dart';
+import 'package:flotask/pages/userprofile.dart';
 import 'package:flotask/components/voice_memos.dart';
 
 void main() async {
