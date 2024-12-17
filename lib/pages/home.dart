@@ -21,7 +21,8 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScreenshotController _screenshotController = ScreenshotController();
   SMIInput<double>? growinput; // Input to control flower growth
@@ -45,17 +46,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   void _onRiveInit(Artboard artboard) async {
-    final controller = StateMachineController.fromArtboard(artboard, 'State Machine 1');
+    final controller =
+        StateMachineController.fromArtboard(artboard, 'State Machine 1');
     if (controller != null) {
       artboard.addController(controller);
       growinput = controller.findInput<double>('Grow');
       if (growinput != null) {
         print('Grow input initialized.');
         print('The completed goals on init are: ${widget.completedGoals}');
-        for(double i=0; i<=widget.completedGoals;i++){
+        for (double i = 0; i <= widget.completedGoals; i++) {
           ufs(growinput, i);
           print('Will wait for 1 seconds');
-          await Future.delayed(Duration(milliseconds:500));
+          await Future.delayed(Duration(milliseconds: 500));
           print('1 seconds have passed');
         }
       } else {
@@ -66,9 +68,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  void ufs(SMIInput<double>? growInput, double stage){
-    try{
-      if(growInput != null){
+  void ufs(SMIInput<double>? growInput, double stage) {
+    try {
+      if (growInput != null) {
         growInput.value = stage;
         print('updated to stage $stage');
       } else {
@@ -89,7 +91,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             _currentStage = 1;
             print('Flower at Stage 1');
             break;
-          case 2:       
+          case 2:
             growinput!.value = 2; // Stage 2
             _currentStage = 2;
             print('Flower at Stage 2');
@@ -125,7 +127,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       updateFlowerStage();
     }
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -140,12 +141,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         backgroundColor: const Color(0xFFFFE6E6),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32),
+          icon: Icon(Icons.more_vert,
+              color: Colors.black.withOpacity(0.9), size: 32),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.person_outline_rounded, size: 36, color: Colors.black.withOpacity(0.7)),
+            icon: Icon(Icons.person_outline_rounded,
+                size: 36, color: Colors.black.withOpacity(0.7)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -165,59 +168,59 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           onInit: _onRiveInit,
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: FloatingActionButton(
-          onPressed: _showAddTaskDialog,
-          child: const Icon(Icons.add, size: 36),
-          backgroundColor: const Color(0xFFD2B48C),
-          tooltip: 'Add Task',
-          elevation: 10,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
-      ),
+      // floatingActionButton: Padding(
+      //   padding: const EdgeInsets.only(bottom: 20),
+      //   child: FloatingActionButton(
+      //     onPressed: _showAddTaskDialog,
+      //     child: const Icon(Icons.add, size: 36),
+      //     backgroundColor: const Color(0xFFD2B48C),
+      //     tooltip: 'Add Task',
+      //     elevation: 10,
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(30),
+      //     ),
+      //   ),
+      //),
     );
   }
 
-  void _showAddTaskDialog() {
-    final TextEditingController _taskController = TextEditingController();
+//   void _showAddTaskDialog() {
+//     final TextEditingController _taskController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          backgroundColor: Colors.white.withOpacity(0.9),
-          title: Text('Add New Task', style: TextStyle(color: Colors.black.withOpacity(0.7))),
-          content: TextField(
-            controller: _taskController,
-            decoration: InputDecoration(
-              hintText: 'Enter task description',
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                final task = _taskController.text;
-                if (task.isNotEmpty) {
-                  print('Task added: $task');
-                  Navigator.pop(context);
-                }
-              },
-              child: Text('Add', style: TextStyle(color: Colors.black.withOpacity(0.7))),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: Colors.black.withOpacity(0.7))),
-            ),
-          ],
-        );
-      },
-    );
-  }
+//     showDialog(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return AlertDialog(
+//           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+//           backgroundColor: Colors.white.withOpacity(0.9),
+//           title: Text('Add New Task', style: TextStyle(color: Colors.black.withOpacity(0.7))),
+//           content: TextField(
+//             controller: _taskController,
+//             decoration: InputDecoration(
+//               hintText: 'Enter task description',
+//               filled: true,
+//               fillColor: Colors.white.withOpacity(0.5),
+//               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
+//             ),
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () {
+//                 final task = _taskController.text;
+//                 if (task.isNotEmpty) {
+//                   print('Task added: $task');
+//                   Navigator.pop(context);
+//                 }
+//               },
+//               child: Text('Add', style: TextStyle(color: Colors.black.withOpacity(0.7))),
+//             ),
+//             TextButton(
+//               onPressed: () => Navigator.pop(context),
+//               child: Text('Cancel', style: TextStyle(color: Colors.black.withOpacity(0.7))),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
 }
