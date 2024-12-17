@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'package:flotask/components/menu.dart';
-import 'package:flotask/pages/userprofile.dart'; // Import UserProfilePage
+import 'package:flotask/pages/userprofile.dart';
 import 'dart:async';
 import 'package:screenshot/screenshot.dart';
 
 class HomePage extends StatefulWidget {
   final VoidCallback toggleTheme; // Add toggleTheme function
   final bool isDarkMode; // Add theme mode state
+  final int completedGoals; // Track completed goals
 
-  const HomePage({Key? key, required this.toggleTheme, required this.isDarkMode}) : super(key: key);
+  const HomePage({
+    Key? key,
+    required this.toggleTheme,
+    required this.isDarkMode,
+    required this.completedGoals,
+  }) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -17,30 +23,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final ScreenshotController _screenshotController = ScreenshotController(); // Screenshot controller
-  SMIInput<double>? _growInput;
+  final ScreenshotController _screenshotController = ScreenshotController();
+  SMIInput<double>? growinput; // Input to control flower growth
   int _currentStage = 0;
 
   @override
   void initState() {
     super.initState();
-    _setAnimationToStage1(); // Set animation to stage 1 on initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      updateFlowerStage();
+    });
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  void didUpdateWidget(HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.completedGoals != widget.completedGoals) {
+      _retryUpdateFlowerStage(); // Retry logic to ensure flower stage updates
+    }
   }
 
-  void _onRiveInit(Artboard artboard) {
+  void _onRiveInit(Artboard artboard) async {
     final controller = StateMachineController.fromArtboard(artboard, 'State Machine 1');
     if (controller != null) {
       artboard.addController(controller);
-      _growInput = controller.findInput<double>('Grow');
-
-      if (_growInput != null) {
-        _growInput!.value = 0; // Start at Level Null
-        print('grow input initialized');
+      growinput = controller.findInput<double>('Grow');
+      if (growinput != null) {
+        print('Grow input initialized.');
+        print('The completed goals on init are: ${widget.completedGoals}');
+        for(double i=0; i<=widget.completedGoals;i++){
+          ufs(growinput, i);
+          print('Will wait for 1 seconds');
+          await Future.delayed(Duration(milliseconds:500));
+          print('1 seconds have passed');
+        }
       } else {
         print('Error: grow input not found');
       }
@@ -49,17 +66,66 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  void _setAnimationToStage1() {
-    if (_growInput != null) {
-      setState(() {
-        _growInput!.value = 1; // Set animation to Stage 1
-        _currentStage = 1;
-        print('Animation set to: Stage 1');
-      });
-    } else {
-      print('grow input is null');
+  void ufs(SMIInput<double>? growInput, double stage){
+    try{
+      if(growInput != null){
+        growInput.value = stage;
+        print('updated to stage $stage');
+      } else {
+        print('Error');
+      }
+    } catch (e) {
+      print("Error: $e");
     }
   }
+
+  // Update flower stage based on completed goals
+  void updateFlowerStage() {
+    if (growinput != null) {
+      setState(() {
+        switch (widget.completedGoals) {
+          case 1:
+            growinput!.value = 1; // Stage 1
+            _currentStage = 1;
+            print('Flower at Stage 1');
+            break;
+          case 2:       
+            growinput!.value = 2; // Stage 2
+            _currentStage = 2;
+            print('Flower at Stage 2');
+            break;
+          case 3:
+            growinput!.value = 3; // Stage 3
+            _currentStage = 3;
+            print('Flower at Stage 3');
+            break;
+          default:
+            growinput!.value = 0; // Initial stage
+            _currentStage = 0;
+            print('Flower at Initial Stage');
+        }
+      });
+    } else {
+      print('Grow input is null. Cannot update stage.');
+    }
+  }
+
+  // Retry mechanism to ensure growInput is initialized
+  void _retryUpdateFlowerStage() {
+    if (growinput == null) {
+      print('Grow input not initialized, retrying...');
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (growinput != null) {
+          updateFlowerStage();
+        } else {
+          print('Grow input still not ready.');
+        }
+      });
+    } else {
+      updateFlowerStage();
+    }
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -68,10 +134,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       drawer: Menu(
         toggleTheme: widget.toggleTheme,
         isDarkMode: widget.isDarkMode,
-        screenshotController: _screenshotController, // Pass ScreenshotController
+        screenshotController: _screenshotController,
       ),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFE6E6), // Set the color to match the pink background
+        backgroundColor: const Color(0xFFFFE6E6),
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.more_vert, color: Colors.black.withOpacity(0.9), size: 32),
@@ -92,7 +158,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ],
       ),
       body: Screenshot(
-        controller: _screenshotController, // Wrap content with Screenshot widget
+        controller: _screenshotController,
         child: RiveAnimation.asset(
           'assets/growing_plant.riv',
           fit: BoxFit.cover,
