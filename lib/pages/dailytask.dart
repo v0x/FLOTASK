@@ -14,6 +14,7 @@ class DailyTaskPage extends StatefulWidget {
 class _DailyTaskPageState extends State<DailyTaskPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String _selectedPriority = 'All'; // Priority filter
 
   @override
   void initState() {
@@ -81,24 +82,32 @@ class _DailyTaskPageState extends State<DailyTaskPage>
                   return const SizedBox.shrink();
                 }
 
-                final tasks = taskSnapshot.data!.docs;
+                final tasks = taskSnapshot.data!.docs.where((task) {
+                  final taskData = task.data() as Map<String, dynamic>? ?? {};
+                  final taskPriority = taskData['tag'] ?? 'No tags';
+                  return _selectedPriority == 'All' || taskPriority == _selectedPriority;
+                }).toList();
+
                 if (tasks.isEmpty) {
                   return const SizedBox.shrink();
                 }
 
                 return Column(
                   children: tasks.map((task) {
-                    String taskName = task['task'];
-                    String goalName = goal['title'];
+                    final taskData = task.data() as Map<String, dynamic>? ?? {};
+                    String taskName = taskData['task'] ?? 'Unnamed Task';
+                    String goalName = goal['title'] ?? 'Unnamed Goal';
+                    String priorityTag = taskData['tag'] ?? 'No tags';
+
+                    Map<String, Color> priorityColors = {
+                      'No tags': Colors.grey,
+                      'Low': Colors.green,
+                      'Medium': Colors.orange,
+                      'High': Colors.red,
+                    };
 
                     return StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(userId)
-                          .collection('goals')
-                          .doc(goal.id)
-                          .collection('tasks')
-                          .doc(task.id)
+                      stream: task.reference
                           .collection('recurrences')
                           .where('status', isEqualTo: status)
                           .where('date', isEqualTo: DateTime.parse(today))
@@ -116,42 +125,57 @@ class _DailyTaskPageState extends State<DailyTaskPage>
 
                         return Column(
                           children: recurrences.map((recurrence) {
+                            final recurrenceData =
+                                recurrence.data() as Map<String, dynamic>;
                             bool isCompleted =
-                                recurrence['status'] == 'completed';
+                                recurrenceData['status'] == 'completed';
 
                             return ListTile(
                               onLongPress: () async {
                                 if (status == 'paused') {
-                                  await recurrence.reference.update({'status': 'todo'});
+                                  await recurrence.reference
+                                      .update({'status': 'todo'});
                                 } else {
-                                  await recurrence.reference.update({'status': 'paused'});
+                                  await recurrence.reference
+                                      .update({'status': 'paused'});
                                 }
                                 setState(() {});
                               },
-                              leading: Checkbox(
-                                value: isCompleted,
-                                onChanged: (bool? value) {
-                                  if (value != null) {
-                                    _updateRecurrenceStatus(
-                                      recurrence.reference,
-                                      task.reference,
-                                      goal.reference,
-                                      value,
-                                    );
-                                  }
-                                },
+                              leading: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    color: priorityColors[priorityTag],
+                                    size: 12,
+                                  ),
+                                  Checkbox(
+                                    value: isCompleted,
+                                    onChanged: (bool? value) {
+                                      if (value != null) {
+                                        _updateRecurrenceStatus(
+                                          recurrence.reference,
+                                          task.reference,
+                                          goal.reference,
+                                          value,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
                               title: Text(taskName),
                               subtitle: Text(
-                                  'Goal: $goalName\nDate: ${_formatDate((task['startDate'] as Timestamp).toDate())} to ${_formatDate((task['endDate'] as Timestamp).toDate())}\nTime: ${task['selectedTime'] ?? 'Any time'}'),
+                                  'Goal: $goalName\nPriority: $priorityTag\nDate: ${_formatDate((taskData['startDate'] as Timestamp).toDate())} to ${_formatDate((taskData['endDate'] as Timestamp).toDate())}\nTime: ${taskData['selectedTime'] ?? 'Any time'}'),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () {
-                                      _editTask(task.reference,
-                                          task.data() as Map<String, dynamic>);
+                                      _editTask(
+                                          task.reference,
+                                          taskData);
                                     },
                                   ),
                                 ],
@@ -180,28 +204,14 @@ class _DailyTaskPageState extends State<DailyTaskPage>
   Future<void> _editTask(
       DocumentReference taskRef, Map<String, dynamic> currentTaskData) async {
     final TextEditingController _taskController =
-        TextEditingController(text: currentTaskData['task']);
-    TimeOfDay? _selectedTime = currentTaskData['selectedTime'] != null
-        ? TimeOfDay(
-            hour: int.parse(currentTaskData['selectedTime'].split(":")[0]),
-            minute: int.parse(currentTaskData['selectedTime'].split(":")[1]),
-          )
-        : null;
-    String _selectedOption =
-        _selectedTime != null ? 'Specific time' : 'Any time';
-
-    Future<void> _selectTime(BuildContext context, StateSetter setState) async {
-      final TimeOfDay? picked = await showTimePicker(
-        context: context,
-        initialTime: _selectedTime ??
-            TimeOfDay.now(), // Default to current time if none selected
-      );
-      if (picked != null && picked != _selectedTime) {
-        setState(() {
-          _selectedTime = picked; // Update the selected time
-        });
-      }
-    }
+        TextEditingController(text: currentTaskData['task'] ?? '');
+    String _priorityTag = currentTaskData['tag'] ?? 'No tags';
+    final List<Map<String, dynamic>> _priorityOptions = [
+      {'label': 'No tags', 'color': Colors.grey},
+      {'label': 'Low', 'color': Colors.green},
+      {'label': 'Medium', 'color': Colors.orange},
+      {'label': 'High', 'color': Colors.red},
+    ];
 
     await showDialog(
       context: context,
@@ -215,72 +225,49 @@ class _DailyTaskPageState extends State<DailyTaskPage>
                   children: [
                     TextField(
                       controller: _taskController,
-                      decoration: const InputDecoration(
-                        labelText: 'Task Name',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    const Text(
-                      'Time',
-                      style: TextStyle(fontSize: 18),
+                      decoration: const InputDecoration(labelText: 'Task Name'),
                     ),
                     const SizedBox(height: 8.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Time:'),
+                        const Text('Priority:'),
                         DropdownButton<String>(
-                          value: _selectedOption,
-                          items: <String>['Any time', 'Specific time']
-                              .map((String value) {
+                          value: _priorityTag,
+                          items: _priorityOptions.map((option) {
                             return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
+                              value: option['label'],
+                              child: Text(
+                                option['label'],
+                                style: TextStyle(color: option['color']),
+                              ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
                             setState(() {
-                              _selectedOption = newValue!;
-                              if (newValue == 'Specific time') {
-                                _selectTime(context, setState);
-                              } else {
-                                _selectedTime = null;
-                              }
+                              _priorityTag = newValue!;
                             });
                           },
                         ),
                       ],
                     ),
-                    if (_selectedOption == 'Specific time' &&
-                        _selectedTime != null)
-                      Text('Selected Time: ${_selectedTime!.format(context)}'),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    _deleteTask(taskRef);
-                  },
-                  child: const Text('Delete'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () async {
                     await taskRef.update({
                       'task': _taskController.text,
-                      'selectedTime': _selectedTime != null
-                          ? '${_selectedTime!.hour}:${_selectedTime!.minute}'
-                          : null,
+                      'tag': _priorityTag,
                     });
-                    Navigator.of(context).pop();
+                    Navigator.pop(context);
                   },
-                  child: const Text('Save Changes'),
+                  child: const Text('Save'),
                 ),
               ],
             );
@@ -290,45 +277,14 @@ class _DailyTaskPageState extends State<DailyTaskPage>
     );
   }
 
-  Future<void> _deleteTask(DocumentReference taskRef) async {
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Task'),
-          content: const Text('Are you sure you want to delete this task?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await taskRef.delete();
-                Navigator.of(context).pop(); // Close the confirmation dialog
-                Navigator.of(context).pop(); // Close the edit dialog
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(
+        title: const Center(
           child: Text(
             "Daily tasks",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
         backgroundColor: const Color(0xFFEBEAE3),
@@ -341,31 +297,53 @@ class _DailyTaskPageState extends State<DailyTaskPage>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildTaskList('todo'),
-          _buildTaskList('completed'),
-          _buildTaskList('paused'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Filter by Priority: "),
+                DropdownButton<String>(
+                  value: _selectedPriority,
+                  items: ['All', 'High', 'Medium', 'Low', 'No tags']
+                      .map((String priority) {
+                    return DropdownMenuItem<String>(
+                      value: priority,
+                      child: Text(priority),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedPriority = newValue!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTaskList('todo'),
+                _buildTaskList('completed'),
+                _buildTaskList('paused'),
+              ],
+            ),
+          ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddGoalPage()),
-            );
-          },
-          backgroundColor: Colors.black,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddGoalPage()),
+          );
+        },
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
