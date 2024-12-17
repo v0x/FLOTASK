@@ -69,87 +69,87 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _forgotPassword() async {
-    final TextEditingController _dialogEmailController =
-        TextEditingController();
-    final TextEditingController _dialogUsernameController =
-        TextEditingController();
+  // void _forgotPassword() async {
+  //   final TextEditingController _dialogEmailController =
+  //       TextEditingController();
+  //   final TextEditingController _dialogUsernameController =
+  //       TextEditingController();
 
-    // Show a dialog to enter username and email
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Forgot Password'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                TextField(
-                  controller: _dialogEmailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                  ),
-                ),
-                TextField(
-                  controller: _dialogUsernameController,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Submit'),
-            ),
-          ],
-        );
-      },
-    );
+  //   // Show a dialog to enter username and email
+  //   await showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: Text('Forgot Password'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: <Widget>[
+  //               TextField(
+  //                 controller: _dialogEmailController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Email',
+  //                 ),
+  //               ),
+  //               TextField(
+  //                 controller: _dialogUsernameController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Username',
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Close the dialog
+  //             },
+  //             child: Text('Submit'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
 
-    // Get the values from the controllers after the dialog is closed
-    String email = _dialogEmailController.text.trim();
-    String username = _dialogUsernameController.text.trim();
+  //   // Get the values from the controllers after the dialog is closed
+  //   String email = _dialogEmailController.text.trim();
+  //   String username = _dialogUsernameController.text.trim();
 
-    if (email.isEmpty || username.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Email and username fields cannot be empty.'),
-        ),
-      );
-      return;
-    }
+  //   if (email.isEmpty || username.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Email and username fields cannot be empty.'),
+  //       ),
+  //     );
+  //     return;
+  //   }
 
-    try {
-      // Check if the username and email match in Firestore
-      QuerySnapshot result = await _firestore
-          .collection('users')
-          .where('username', isEqualTo: username)
-          .where('email', isEqualTo: email)
-          .get();
+  //   try {
+  //     // Check if the username and email match in Firestore
+  //     QuerySnapshot result = await _firestore
+  //         .collection('users')
+  //         .where('username', isEqualTo: username)
+  //         .where('email', isEqualTo: email)
+  //         .get();
 
-      if (result.docs.isNotEmpty) {
-        // If found, navigate to the password reset screen
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => ResetPasswordPage(email: email),
-        ));
-      } else {
-        // Show an error if username and email don't match
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Username and email do not match our records.'),
-          ),
-        );
-      }
-    } catch (e) {
-      print(e.toString());
-    }
-  }
+  //     if (result.docs.isNotEmpty) {
+  //       // If found, navigate to the password reset screen
+  //       Navigator.of(context).push(MaterialPageRoute(
+  //         builder: (context) => ResetPasswordPage(email: email),
+  //       ));
+  //     } else {
+  //       // Show an error if username and email don't match
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Username and email do not match our records.'),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print(e.toString());
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -236,26 +236,26 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         keyboardType: TextInputType.text,
                       ),
-                      SizedBox(height: 10),
-                      Container(
-                        alignment: Alignment(1, 0),
-                        padding: EdgeInsets.only(top: 15, left: 20),
-                        child: InkWell(
-                          onTap: () {
-                            _forgotPassword();
-                          },
-                          child: Text(
-                            'Forgot Password',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Montserrat',
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // The rest of your login UI remains unchanged
+                      // SizedBox(height: 10),
+                      // Container(
+                      //   alignment: Alignment(1, 0),
+                      //   padding: EdgeInsets.only(top: 15, left: 20),
+                      //   child: InkWell(
+                      //     onTap: () {
+                      //       _forgotPassword();
+                      //     },
+                      //     child: Text(
+                      //       'Forgot Password',
+                      //       style: TextStyle(
+                      //         color: Colors.black,
+                      //         fontWeight: FontWeight.bold,
+                      //         fontFamily: 'Montserrat',
+                      //         decoration: TextDecoration.underline,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      // // The rest of your login UI remains unchanged
                       Container(
                         alignment: Alignment.center,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -334,61 +334,61 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class ResetPasswordPage extends StatelessWidget {
-  final String email;
+// class ResetPasswordPage extends StatelessWidget {
+//   final String email;
 
-  ResetPasswordPage({required this.email});
+//   ResetPasswordPage({required this.email});
 
-  @override
-  Widget build(BuildContext context) {
-    final TextEditingController _newPasswordController =
-        TextEditingController();
+//   @override
+//   Widget build(BuildContext context) {
+//     final TextEditingController _newPasswordController =
+//         TextEditingController();
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Reset Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _newPasswordController,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-              ),
-              obscureText: false,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  // Get the current user
-                  User? user = _auth.currentUser;
-                  if (user != null) {
-                    // Update the user's password
-                    await user.updatePassword(_newPasswordController.text);
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Password reset successfully.')),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('No user is signed in.')),
-                    );
-                  }
-                } catch (e) {
-                  // Catch specific error for re-authentication
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content:
-                            Text('Failed to reset password: ${e.toString()}')),
-                  );
-                }
-              },
-              child: Text('Reset Password'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//     return Scaffold(
+//       appBar: AppBar(title: Text('Reset Password')),
+//       body: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           children: <Widget>[
+//             TextField(
+//               controller: _newPasswordController,
+//               decoration: InputDecoration(
+//                 labelText: 'New Password',
+//               ),
+//               obscureText: false,
+//             ),
+//             SizedBox(height: 20),
+//             ElevatedButton(
+//               onPressed: () async {
+//                 try {
+//                   // Get the current user
+//                   User? user = _auth.currentUser;
+//                   if (user != null) {
+//                     // Update the user's password
+//                     await user.updatePassword(_newPasswordController.text);
+//                     Navigator.of(context).pop();
+//                     ScaffoldMessenger.of(context).showSnackBar(
+//                       SnackBar(content: Text('Password reset successfully.')),
+//                     );
+//                   } else {
+//                     ScaffoldMessenger.of(context).showSnackBar(
+//                       SnackBar(content: Text('No user is signed in.')),
+//                     );
+//                   }
+//                 } catch (e) {
+//                   // Catch specific error for re-authentication
+//                   ScaffoldMessenger.of(context).showSnackBar(
+//                     SnackBar(
+//                         content:
+//                             Text('Failed to reset password: ${e.toString()}')),
+//                   );
+//                 }
+//               },
+//               child: Text('Reset Password'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
