@@ -5,21 +5,30 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../models/task_model.dart';
+import '../components/task_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../components/goal_service.dart';
+import '../models/goal_model.dart';
+import 'package:intl/intl.dart';
 
-class TaskLabel {
-  final String taskName;
-  final Color taskColor;
+final GoalService goalService = GoalService();
+final TaskService taskService = TaskService();
+List<Task> tasks = [];
 
-  const TaskLabel(this.taskName, this.taskColor);
+Color getColor(String colorString) {
+  try {
+    String hex = colorString.replaceAll("#", "");
+    if (hex.length == 6) {
+      hex = "FF$hex"; // Add alpha if missing
+    }
+    return Color(int.parse(hex, radix: 16));
+  } catch (e) {
+    return Colors.white; // Default color on error
+  }
 }
-
-List<TaskLabel> tasks = [
-  TaskLabel('Task 1', Colors.blue),
-  TaskLabel('Task 2', Colors.pink),
-  TaskLabel('Task 3', Colors.green),
-  TaskLabel('Task 4', Colors.orange),
-  TaskLabel('Task 5', Colors.purple),
-];
 
 Set<Marker> _markers = {};
 
@@ -29,6 +38,9 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPage extends State<MapPage> {
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  late final String userId;
+  late final CollectionReference goalsCollection;
   GoogleMapController? _mapController;
   CameraPosition _initialCameraPosition = CameraPosition(
     target: LatLng(37.7700913, -122.4704359), //Setting Default Location to SF Japanese Tea Garden if can't fetch user location
@@ -39,10 +51,32 @@ class _MapPage extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    if (currentUser != null) {
+      userId = currentUser!.uid;
+      goalsCollection = FirebaseFirestore.instance.collection('users').doc(userId).collection('goals');
+    }
     _checkForApiKey();
     _determinePosition();
     _loadMarkers();
+    if(tasks.isEmpty){_fetchGoalsAndTasks();}
   }
+
+  Future<void> _fetchGoalsAndTasks() async {
+      try {
+        QuerySnapshot goalSnapshot = await goalsCollection.get();
+        List<Goal> fetchedGoals = goalSnapshot.docs.map((doc) => Goal.fromDocument(doc)).toList();
+        //tasks.add(Task(id: "9999", taskName: "Select Task", repeatInterval: 9999, startDate: DateTime.now(), endDate: DateTime.now(), workTime: 0, breakTime: 0, taskColor: "#FFFFFF", status: "status", totalRecurrences: 999, totalCompletedRecurrences: 999));
+        for (var goal in fetchedGoals) {
+          QuerySnapshot taskSnapshot = await goalsCollection.doc(goal.id).collection('tasks').get();
+          List<Task> fetchedTasks = taskSnapshot.docs.map((doc) => Task.fromDocument(doc)).toList();
+          for (var task in fetchedTasks) {
+            tasks.add(task);
+          }
+        }
+      } catch (e) {
+        print('Error fetching tasks: $e');
+      }
+    }
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -136,7 +170,7 @@ class _MapPage extends State<MapPage> {
             markerId: MarkerId("$lat,$lng"),
             position: LatLng(lat, lng),
             infoWindow: InfoWindow(title: name),
-            icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(task.taskColor)),
+            icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(getColor(task.taskColor))),
             onTap: () => _confirmDeleteMarker("$lat,$lng"),
           );
         }).toSet();
@@ -348,7 +382,7 @@ class _MapPage extends State<MapPage> {
             markerId: MarkerId("$lat,$lng"),
             position: LatLng(lat, lng),
             infoWindow: InfoWindow(title: name),
-            icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(task.taskColor)),
+            icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(getColor(task.taskColor))),
             onTap: () => _confirmDeleteMarker("$lat,$lng"),
           );
         }).toSet();
@@ -360,12 +394,14 @@ class _MapPage extends State<MapPage> {
 
     Future<Map<String, dynamic>?> _showMarkerDialog(BuildContext context, LatLng position) async {
       TextEditingController _textFieldController = TextEditingController();
-      TaskLabel? selectedTask;
+      Task? selectedTask;
 
       return showDialog<Map<String, dynamic>>(
         context: context,
         builder: (context) {
-          return AlertDialog(
+          return SizedBox.expand(
+            child: SingleChildScrollView(
+              child: AlertDialog(
             title: Text('Add Bookmark', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -376,17 +412,17 @@ class _MapPage extends State<MapPage> {
                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.normal),
                 ),
                 SizedBox(height: 10),
-                DropdownButtonFormField<TaskLabel>(
+                DropdownButtonFormField<Task>(
                   value: selectedTask,
                   items: tasks.map((task) {
-                    return DropdownMenuItem<TaskLabel>(
+                    return DropdownMenuItem<Task>(
                       value: task,
                       child: Row(
                         children: [
                           Container(
                             width: 12,
                             height: 12,
-                            color: task.taskColor,
+                            color: getColor(task.taskColor),
                             margin: EdgeInsets.only(right: 8),
                           ),
                           Text(task.taskName, style: TextStyle(color: Colors.black, fontWeight: FontWeight.normal),),
@@ -395,7 +431,7 @@ class _MapPage extends State<MapPage> {
                     );
                   }).toList(),
                   onChanged: (value) {
-                    selectedTask = value;
+                    selectedTask = value as Task?;
                   },
                   hint: Text("Select Task", style: TextStyle(color: Colors.black, fontWeight: FontWeight.normal),),
                 ),
@@ -418,6 +454,8 @@ class _MapPage extends State<MapPage> {
                 },
               ),
             ],
+          ),
+            ),
           );
         },
       );
@@ -427,14 +465,14 @@ class _MapPage extends State<MapPage> {
       final result = await _showMarkerDialog(context, position);
       if (result != null) {
         final markerName = result['name'];
-        final task = result['task'] as TaskLabel;
+        final task = result['task'] as Task;
         setState(() {
           _markers.add(
             Marker(
               markerId: MarkerId(position.toString()),
               position: position,
               infoWindow: InfoWindow(title: task.taskName + ": " + markerName),
-              icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(task.taskColor)),
+              icon: BitmapDescriptor.defaultMarkerWithHue(_colorToHue(getColor(task.taskColor))),
               onTap: () => _confirmDeleteMarker(position.toString()),
             ),
           );
