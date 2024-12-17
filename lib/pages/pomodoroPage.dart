@@ -14,6 +14,8 @@ import 'package:intl/intl.dart';
 final GoalService goalService = GoalService();
 final TaskService taskService = TaskService();
 List<Task> tasks = [];
+int currlen = 0;
+bool isLoading = true;
 
 Color getColor(String colorString) {
   try {
@@ -35,12 +37,11 @@ int timeDealer(int timeUnit) {
   }
 }
 
-
   class PomodoroPage extends StatefulWidget {
     const PomodoroPage({
       super.key,
     });
-    
+    @override
     State<PomodoroPage> createState() => _PomodoroState();
   }
 
@@ -56,9 +57,10 @@ int timeDealer(int timeUnit) {
       userId = currentUser!.uid;
       goalsCollection = FirebaseFirestore.instance.collection('users').doc(userId).collection('goals');
     }
-    if(tasks.isEmpty){_fetchGoalsAndTasks();}
+    tasks = [];
+    _fetchGoalsAndTasks();
   }
-  
+
     final TextEditingController taskController = TextEditingController();
     Task? selectedTask;
     
@@ -77,8 +79,45 @@ int timeDealer(int timeUnit) {
       } catch (e) {
         print('Error fetching tasks: $e');
       }
+      finally {
+        setState(() {
+          isLoading = false;
+        });
+    }
     }
 
+    Future<void> _somethingChanged() async {
+    //Listen to all 'tasks' under the current user's 'goals'
+      FirebaseFirestore.instance
+          .collectionGroup('tasks')
+          .snapshots()
+          .listen((snapshot) {
+        for (var change in snapshot.docChanges) {
+          DocumentReference goalRef = change.doc.reference.parent.parent!;
+          if (goalRef.parent.parent!.id == userId) { // Ensure it belongs to current user
+            Task task = Task.fromDocument(change.doc);
+            
+            if (change.type == DocumentChangeType.added) {
+              setState(() {
+                tasks.add(task);
+              });
+            } else if (change.type == DocumentChangeType.removed) {
+              setState(() {
+                tasks.removeWhere((t) => t.id == task.id);
+              });
+            } else if (change.type == DocumentChangeType.modified) {
+              setState(() {
+                int index = tasks.indexWhere((t) => t.id == task.id);
+                if (index != -1) {
+                  tasks[index] = task;
+                }
+              });
+            }
+          }
+        }
+      });
+    }
+    
 
     @override
     Widget build(BuildContext context) {
@@ -91,7 +130,9 @@ int timeDealer(int timeUnit) {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: 
+                child: isLoading
+                ? CircularProgressIndicator()
+                :
                 DropdownButton<Task>(
                   value: selectedTask,
                   hint: Text('Select Task'),
@@ -158,7 +199,6 @@ int timeDealer(int timeUnit) {
                                 ],
                               ),
                             ),
-
                             Expanded(child: 
                               Container(
                                 padding: EdgeInsets.all(4),

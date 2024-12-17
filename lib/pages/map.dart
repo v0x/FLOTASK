@@ -55,10 +55,11 @@ class _MapPage extends State<MapPage> {
       userId = currentUser!.uid;
       goalsCollection = FirebaseFirestore.instance.collection('users').doc(userId).collection('goals');
     }
-    _checkForApiKey();
+    //_checkForApiKey();
     _determinePosition();
     _loadMarkers();
-    if(tasks.isEmpty){_fetchGoalsAndTasks();}
+    tasks = [];
+    _fetchGoalsAndTasks();
   }
 
   Future<void> _fetchGoalsAndTasks() async {
@@ -76,6 +77,38 @@ class _MapPage extends State<MapPage> {
       } catch (e) {
         print('Error fetching tasks: $e');
       }
+    }
+
+  Future<void> _somethingChanged() async {
+    //Listen to all 'tasks' under the current user's 'goals'
+      FirebaseFirestore.instance
+          .collectionGroup('tasks')
+          .snapshots()
+          .listen((snapshot) {
+        for (var change in snapshot.docChanges) {
+          DocumentReference goalRef = change.doc.reference.parent.parent!;
+          if (goalRef.parent.parent!.id == userId) { // Ensure it belongs to current user
+            Task task = Task.fromDocument(change.doc);
+            
+            if (change.type == DocumentChangeType.added) {
+              setState(() {
+                tasks.add(task);
+              });
+            } else if (change.type == DocumentChangeType.removed) {
+              setState(() {
+                tasks.removeWhere((t) => t.id == task.id);
+              });
+            } else if (change.type == DocumentChangeType.modified) {
+              setState(() {
+                int index = tasks.indexWhere((t) => t.id == task.id);
+                if (index != -1) {
+                  tasks[index] = task;
+                }
+              });
+            }
+          }
+        }
+      });
     }
 
   Future<void> _determinePosition() async {

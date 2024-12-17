@@ -56,7 +56,6 @@ class _CategoryState extends State<Category> {
       print('Error fetching goals and tasks: $e');
     }
   }
-
   // Folder Logic
   void createFolder(String folderName){
     setState(() {
